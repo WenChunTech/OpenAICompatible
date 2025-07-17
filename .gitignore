@@ -1,0 +1,8 @@
+.exe
+.env.local
+*.log
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Vscode/
