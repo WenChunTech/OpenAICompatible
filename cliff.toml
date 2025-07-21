@@ -4,11 +4,11 @@
 # Lines starting with "#" are comments.
 # Configuration options are organized into tables and keys.
 # See documentation for more information on available options.
-# https://github.com/WenChunTech/MilitaryCardGame
+# https://github.com/WenChunTech/OpenAICompatible
 
 [remote.github]
 owner = "WenChunTech"
-repo = "MilitaryCardGame"
+repo = "OpenAICompatible"
 
 [changelog]
 # template for the changelog header
@@ -75,7 +75,7 @@ footer = """
 trim = true
 # postprocessors
 postprocessors = [
-  { pattern = '<REPO>', replace = "https://github.com/WenChunTech/MilitaryCardGame" }, # replace repository URL
+  { pattern = '<REPO>', replace = "https://github.com/WenChunTech/OpenAICompatible" }, # replace repository URL
 ]
 
 [git]

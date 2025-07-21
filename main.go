@@ -10,6 +10,10 @@ import (
 )
 
 func main() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Received request", "method", r.Method, "path", r.URL.Path)
+		w.WriteHeader(http.StatusOK)
+	})
 	http.HandleFunc("/v1/chat/completions", handler.ChatProxyChatHandler)
 	http.HandleFunc("/v1/models", handler.ChatProxyModelHandler)
 

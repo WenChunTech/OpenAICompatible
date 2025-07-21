@@ -6,10 +6,10 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
-	"github.com/WenChunTech/OpenAICompatible/src/converter"
 	"github.com/WenChunTech/OpenAICompatible/src/model"
 	"github.com/WenChunTech/OpenAICompatible/src/parser"
 	"github.com/WenChunTech/OpenAICompatible/src/request"
@@ -64,7 +64,7 @@ func HandleResponse(w http.ResponseWriter, resp *request.Response) error {
 	}
 	ch := resp.EventStream()
 	for buf := range ch {
-		events := parser.Parse[model.CodeGeexSSEData, converter.Converter[model.CodeGeexSSEData]](sseParser, buf)
+		events := parser.Parse[*model.OpenAPIChatCompletionStreamResponse, model.CodeGeexSSEData](sseParser, buf)
 		for _, event := range events {
 			openAPIData, err := event.SSEJson2Text()
 			if err != nil {
@@ -92,9 +92,15 @@ func BuildRequest(geexReqBody []byte) *request.RequestBuilder {
 }
 
 func CreateRequestBody(openAPIReq *model.OpenAIChatCompletionRequest, w http.ResponseWriter) ([]byte, error) {
-	var prompt string
-	if len(openAPIReq.Messages) > 0 {
-		prompt = openAPIReq.Messages[len(openAPIReq.Messages)-1].Content
+	var promptBuilder strings.Builder
+	for _, message := range openAPIReq.Messages {
+		messageContent, err := json.Marshal(message)
+		if err != nil {
+			slog.Error("Failed to marshal message", "error", err)
+			return nil, err
+		}
+		promptBuilder.WriteString(string(messageContent))
+		promptBuilder.WriteString("\n")
 	}
 
 	// Construct the CodeGeex request.
@@ -105,10 +111,10 @@ func CreateRequestBody(openAPIReq *model.OpenAIChatCompletionRequest, w http.Res
 		IDE:           config.Config.IDE,
 		IDEVersion:    config.Config.IDEVersion,
 		PluginVersion: config.Config.PluginVersion,
-		Prompt:        prompt,
+		Prompt:        promptBuilder.String(),
 		MachineID:     config.Config.MachineID,
 		TalkID:        config.Config.TalkID,
-		Locale:        config.Config.Locale, // This should be configurable
+		Locale:        config.Config.Locale,
 		Model:         openAPIReq.Model,
 	}
 

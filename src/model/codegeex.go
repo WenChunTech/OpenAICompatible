@@ -36,23 +36,29 @@ type CodeGeexSSEData struct {
 }
 
 func (c CodeGeexSSEData) Convert() (*OpenAPIChatCompletionStreamResponse, error) {
+	choice := OpenAIStreamChoice{
+		Index: 0,
+		Delta: Delta{
+			Content:          c.Text,
+			Role:             "assistant",
+			ReasoningContent: nil,
+			ToolCall:         nil,
+		},
+		FinishReason: nil,
+		Logprobs:     nil,
+		MatchedSotp:  nil,
+	}
+	if c.FinishReason != "" {
+		finishReason := c.FinishReason
+		choice.FinishReason = &finishReason
+	}
 	return &OpenAPIChatCompletionStreamResponse{
 		ID:      c.ID,
 		Object:  "chat.completion.chunk",
 		Created: time.Now().Unix(),
 		Model:   c.Model,
-		Choices: []OpenAIStreamChoice{
-			{
-				Index: 0,
-				Delta: struct {
-					Role    *string `json:"role,omitempty"`
-					Content *string `json:"content,omitempty"`
-				}{
-					Content: &c.Text,
-				},
-				FinishReason: c.FinishReason,
-			},
-		},
+		Choices: []OpenAIStreamChoice{choice},
+		Usage:   nil,
 	}, nil
 }
 
