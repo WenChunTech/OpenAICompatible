@@ -15,7 +15,7 @@ type SSEEventResponse[O any, T converter.Converter[O]] struct {
 	Retry int    `json:"retry,omitempty"`
 }
 
-func (p *SSEEventResponse[O, T]) SSEJson2Text() (string, error) {
+func (p *SSEEventResponse[O, T]) Json2EventSource() (string, error) {
 	openapiData, err := p.Data.Convert()
 	if err != nil {
 		return "", err
@@ -26,9 +26,5 @@ func (p *SSEEventResponse[O, T]) SSEJson2Text() (string, error) {
 		slog.Error("marshal json data error", slog.Any("openapiData", openapiData))
 	}
 
-	return fmt.Sprintf("id: %s\n"+
-		"event: %s\n"+
-		"data: %s\n"+
-		"retry: %d\n"+
-		"\n", p.ID, p.Event, string(jsonData), p.Retry), nil
+	return fmt.Sprintf("data: %s\n\n", string(jsonData)), nil
 }

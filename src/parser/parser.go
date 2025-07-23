@@ -24,7 +24,7 @@ func NewParser() *Parser {
 }
 
 // Parse processes a chunk of SSE data and returns any complete events.
-func Parse[O any, T converter.Converter[O]](p *Parser, data []byte) []sse.SSEEventResponse[O, T] {
+func Parse[T converter.Converter[O], O any](p *Parser, data []byte) []sse.SSEEventResponse[O, T] {
 	p.reminder.Write(data)
 	fullData := p.reminder.String()
 	fullData = strings.ReplaceAll(fullData, "\r\n", "\n")

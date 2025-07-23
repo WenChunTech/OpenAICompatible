@@ -34,11 +34,11 @@ type OpenAIChatMessage struct {
 type OpenAIChatCompletionRequest struct {
 	Model         string              `json:"model"`
 	Temperature   float32             `json:"temperature"`
-	Messages      []OpenAIChatMessage `json:"messages"`
+	Messages      []OpenAIChatMessage `json:"messages,omitempty"`
 	Stream        bool                `json:"stream"`
 	StreamOptions struct {
 		IncludeUsage bool `json:"include_usage"`
-	} `json:"stream_options"`
+	} `json:"stream_options,omitempty"`
 }
 
 type Choice struct {
@@ -88,13 +88,12 @@ type Usage struct {
 
 // OpenAPIChatCompletionStreamResponse represents a streaming chat completion response.
 type OpenAPIChatCompletionStreamResponse struct {
-	ID                string               `json:"id"`
-	Object            string               `json:"object"`
-	Created           int64                `json:"created"`
-	Model             string               `json:"model"`
-	SystemFingerprint string               `json:"system_fingerprint,omitempty"`
-	Choices           []OpenAIStreamChoice `json:"choices"`
-	Usage             *Usage               `json:"usage"`
+	ID      string               `json:"id"`
+	Object  string               `json:"object"`
+	Created int64                `json:"created"`
+	Model   string               `json:"model"`
+	Choices []OpenAIStreamChoice `json:"choices"`
+	Usage   *Usage               `json:"usage"`
 }
 
 // Model represents a single model listing in the OpenAI API.

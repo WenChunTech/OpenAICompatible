@@ -64,9 +64,9 @@ func HandleResponse(w http.ResponseWriter, resp *request.Response) error {
 	}
 	ch := resp.EventStream()
 	for buf := range ch {
-		events := parser.Parse[*model.OpenAPIChatCompletionStreamResponse, model.CodeGeexSSEData](sseParser, buf)
+		events := parser.Parse[model.CodeGeexSSEData](sseParser, buf)
 		for _, event := range events {
-			openAPIData, err := event.SSEJson2Text()
+			openAPIData, err := event.Json2EventSource()
 			if err != nil {
 				slog.Error("Failed to convert SSE data", "error", err)
 				continue
