@@ -6,9 +6,9 @@ for os in ${GOOS[@]}; do
     for arch in ${GOARCH[@]}; do
         echo "Building for $os $arch"
         if [ $os = "windows" ]; then
-            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "-s -w" -o openai_proxy_${os}_${arch}.exe main.go
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "-s -w" -o OpenAICompatible_${os}_${arch}.exe main.go
         else
-            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "-s -w" -o openai_proxy_${os}_${arch} main.go
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "-s -w" -o OpenAICompatible_${os}_${arch} main.go
         fi
     done
 done
