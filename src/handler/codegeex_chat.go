@@ -62,20 +62,37 @@ func HandleResponse(w http.ResponseWriter, resp *request.Response) error {
 		w.Write([]byte("Streaming unsupported"))
 		return errors.New("streaming unsupported")
 	}
-	ch := resp.EventStream()
-	for buf := range ch {
-		events := parser.Parse[model.CodeGeexEventSourceData](sseParser, buf)
-		for _, event := range events {
-			openAPIData, err := event.Json2EventSource()
+	dataChan, errChan := resp.EventStream()
+
+	for {
+		select {
+		case err := <-errChan:
 			if err != nil {
-				slog.Error("Failed to convert SSE data", "error", err)
-				continue
+				slog.Error("Error from event stream", "error", err)
+				http.Error(w, "Error reading from upstream", http.StatusInternalServerError)
+				return err // Return the error
 			}
-			w.Write([]byte(openAPIData))
-			flusher.Flush()
+		case buf, ok := <-dataChan:
+			if !ok {
+				return nil // Channel closed, successful completion
+			}
+			events := parser.Parse[model.CodeGeexEventSourceData](sseParser, buf)
+			for _, event := range events {
+				openAPIData, err := event.Json2EventSource()
+				if err != nil {
+					slog.Error("Failed to convert SSE data", "error", err)
+					continue
+				}
+				_, writeErr := w.Write([]byte(openAPIData))
+				if writeErr != nil {
+					slog.Error("Failed to write to response", "error", writeErr)
+					// The connection is likely closed, so we should stop.
+					return writeErr
+				}
+				flusher.Flush()
+			}
 		}
 	}
-	return nil
 }
 
 func BuildRequest(geexReqBody []byte) *request.RequestBuilder {

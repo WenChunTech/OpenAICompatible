@@ -78,7 +78,7 @@ func (r *RequestBuilder) SetFormData(payload io.Reader) *RequestBuilder {
 }
 
 func (r *RequestBuilder) EnableSSE() *RequestBuilder {
-	r.Header.Set(constant.ContentType, constant.ContentTypeEventStream)
+	r.Header.Set(constant.Accept, constant.ContentTypeEventStream)
 	r.Header.Set(constant.CacheControl, constant.CacheControlNoCache)
 	r.Header.Set(constant.Connection, constant.ConnectionKeepAlive)
 	return r
@@ -126,25 +126,40 @@ func (r *Response) Bytes() ([]byte, error) {
 	return body, nil
 }
 
-func (r *Response) EventStream() chan []byte {
-	ret := make(chan []byte)
-	r.Header.Set(constant.ContentType, constant.ContentTypeEventStream)
-	r.Header.Set(constant.CacheControl, constant.CacheControlNoCache)
-	r.Header.Set(constant.Connection, constant.ConnectionKeepAlive)
+// EventStream reads data from the response body as a server-sent event (SSE) stream.
+// It returns two channels:
+// - A read-only channel for the data chunks ([]byte).
+// - A read-only channel for any errors encountered during reading.
+// Note: The signature of this method has been changed to include an error channel.
+// Calling code may need to be updated to handle the new return values.
+func (r *Response) EventStream() (<-chan []byte, <-chan error) {
+	dataChan := make(chan []byte)
+	errChan := make(chan error, 1) // Buffered channel to avoid blocking
+
 	go func() {
-		defer close(ret)
+		defer close(dataChan)
+		defer close(errChan)
+		defer r.Body.Close() // Ensure the response body is closed
+
 		buf := make([]byte, constant.BUFFER_SIZE)
 		for {
 			n, err := r.Body.Read(buf)
-			if err != nil && err != io.EOF {
-				slog.Error("Failed to read from response body", "error", err)
+			if n > 0 {
+				// Create a copy of the slice to avoid data races,
+				// as the buffer will be reused.
+				data := make([]byte, n)
+				copy(data, buf[:n])
+				dataChan <- data
 			}
-			if n == 0 {
-				break
+			if err != nil {
+				if err != io.EOF {
+					slog.Error("Failed to read from response body", "error", err)
+					errChan <- err
+				}
+				break // Exit loop on any error, including EOF
 			}
-			ret <- buf[:n]
 		}
 	}()
 
-	return ret
+	return dataChan, errChan
 }

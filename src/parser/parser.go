@@ -40,49 +40,7 @@ func Parse[T converter.ChatCompletionConverter](p *Parser, data []byte) []events
 
 	events := make([]eventsource.EventSourceResponse[T], 0, len(parts))
 	for _, part := range parts {
-		if strings.TrimSpace(part) == "" {
-			continue
-		}
-
-		lines := reLine.Split(part, -1)
-		var event eventsource.EventSourceResponse[T]
-		for _, line := range lines {
-			if len(line) == 0 {
-				continue
-			}
-			fields := strings.SplitN(line, ":", 2)
-			if len(fields) != 2 {
-				continue
-			}
-
-			field := strings.TrimSpace(fields[0])
-			value := strings.TrimSpace(fields[1])
-
-			switch field {
-			case "id":
-				event.ID = value
-			case "event":
-				event.Event = value
-			case "data":
-				if len(value) == 0 {
-					continue
-				}
-				err := json.Unmarshal([]byte(value), &event.Data)
-				if err != nil {
-					slog.Error("Failed to unmarshal data field", "error", err, "data", value, "line", line)
-				}
-
-			case "retry":
-				retry, err := strconv.Atoi(value)
-				if err != nil {
-					slog.Error("Failed to parse retry value", "error", err, "value", value, "line", line)
-					continue
-				}
-				event.Retry = retry
-			}
-		}
-
-		if event.ID != "" {
+		if event, ok := parsePart[T](part); ok {
 			events = append(events, event)
 		}
 	}
@@ -91,4 +49,84 @@ func Parse[T converter.ChatCompletionConverter](p *Parser, data []byte) []events
 		return nil
 	}
 	return events
+}
+
+// parsePart parses a single event part and returns the event and a boolean indicating if it was successful.
+func parsePart[T converter.ChatCompletionConverter](part string) (eventsource.EventSourceResponse[T], bool) {
+	if strings.TrimSpace(part) == "" {
+		return eventsource.EventSourceResponse[T]{}, false
+	}
+
+	lines := reLine.Split(part, -1)
+	var event eventsource.EventSourceResponse[T]
+	var data strings.Builder
+
+	for _, line := range lines {
+		parseField(line, &event, &data)
+	}
+
+	dataStr := data.String()
+	if dataStr != "" {
+		parseDataField(dataStr, &event)
+	}
+
+	// An event is valid if it has any of the fields set.
+	if event.ID != "" || event.Event != "" || dataStr != "" || event.Retry != 0 {
+		return event, true
+	}
+
+	return eventsource.EventSourceResponse[T]{}, false
+}
+
+// parseField parses a single line of an event and updates the event and data builder.
+func parseField[T converter.ChatCompletionConverter](line string, event *eventsource.EventSourceResponse[T], data *strings.Builder) {
+	if len(line) == 0 {
+		return
+	}
+	fields := strings.SplitN(line, ":", 2)
+	if len(fields) != 2 {
+		// According to the SSE spec, lines without a colon are ignored.
+		return
+	}
+
+	field := strings.TrimSpace(fields[0])
+	value := ""
+	if len(fields) > 1 {
+		value = strings.TrimPrefix(fields[1], " ")
+	}
+
+	switch field {
+	case "id":
+		event.ID = value
+	case "event":
+		event.Event = value
+	case "data":
+		if data.Len() > 0 {
+			data.WriteRune('\n')
+		}
+		data.WriteString(value)
+	case "retry":
+		retry, err := strconv.Atoi(value)
+		if err != nil {
+			slog.Error("Failed to parse retry value", "error", err, "value", value, "line", line)
+			return
+		}
+		event.Retry = retry
+	}
+}
+
+// parseDataField parses the data field of an event.
+func parseDataField[T converter.ChatCompletionConverter](dataStr string, event *eventsource.EventSourceResponse[T]) {
+	if dataStr == "[DONE]" {
+		event.Data = nil
+	} else {
+		// The data field is a JSON object, unmarshal it.
+		var data T
+		err := json.Unmarshal([]byte(dataStr), &data)
+		if err != nil {
+			slog.Error("Failed to unmarshal data field", "error", err, "data", dataStr)
+			return
+		}
+		event.Data = &data
+	}
 }

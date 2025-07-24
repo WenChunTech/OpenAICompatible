@@ -82,17 +82,30 @@ func (p *BaseProvider[P, M, C]) handleSSEResponse(w http.ResponseWriter, resp *r
 		return
 	}
 
-	ch := resp.EventStream()
-	for buf := range ch {
-		events := parser.Parse[C](sseParser, buf)
-		for _, event := range events {
-			openAPIData, err := event.Json2EventSource()
+	dataChan, errChan := resp.EventStream()
+	for {
+		select {
+		case err := <-errChan:
 			if err != nil {
-				slog.Error("Failed to convert SSE data", "error", err)
-				continue
+				slog.Error("Error from event stream", "error", err)
+				// Depending on the desired behavior, you might want to inform the client.
+				// For now, we just log it and stop processing.
+				return
 			}
-			w.Write([]byte(openAPIData))
-			flusher.Flush()
+		case buf, ok := <-dataChan:
+			if !ok {
+				return // Channel closed
+			}
+			events := parser.Parse[C](sseParser, buf)
+			for _, event := range events {
+				openAPIData, err := event.Json2EventSource()
+				if err != nil {
+					slog.Error("Failed to convert SSE data", "error", err)
+					continue
+				}
+				w.Write([]byte(openAPIData))
+				flusher.Flush()
+			}
 		}
 	}
 }

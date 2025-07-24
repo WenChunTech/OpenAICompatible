@@ -11,12 +11,13 @@ import (
 type EventSourceResponse[T converter.ChatCompletionConverter] struct {
 	ID    string `json:"id"`
 	Event string `json:"event"`
-	Data  T      `json:"data"`
+	Data  *T     `json:"data"`
 	Retry int    `json:"retry,omitempty"`
 }
 
 func (p *EventSourceResponse[T]) Json2EventSource() (string, error) {
-	openapiData, err := p.Data.Convert()
+	data := *p.Data
+	openapiData, err := data.Convert()
 	if err != nil {
 		return "", err
 	}
