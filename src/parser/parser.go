@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/WenChunTech/OpenAICompatible/src/converter"
-	"github.com/WenChunTech/OpenAICompatible/src/sse"
+	"github.com/WenChunTech/OpenAICompatible/src/eventsource"
 )
 
 var reLine = regexp.MustCompile(`\n`)
@@ -24,7 +24,7 @@ func NewParser() *Parser {
 }
 
 // Parse processes a chunk of SSE data and returns any complete events.
-func Parse[T converter.Converter[O], O any](p *Parser, data []byte) []sse.SSEEventResponse[O, T] {
+func Parse[T converter.ChatCompletionConverter](p *Parser, data []byte) []eventsource.EventSourceResponse[T] {
 	p.reminder.Write(data)
 	fullData := p.reminder.String()
 	fullData = strings.ReplaceAll(fullData, "\r\n", "\n")
@@ -38,14 +38,14 @@ func Parse[T converter.Converter[O], O any](p *Parser, data []byte) []sse.SSEEve
 		parts = parts[:lastPartIndex]
 	}
 
-	events := make([]sse.SSEEventResponse[O, T], 0, len(parts))
+	events := make([]eventsource.EventSourceResponse[T], 0, len(parts))
 	for _, part := range parts {
 		if strings.TrimSpace(part) == "" {
 			continue
 		}
 
 		lines := reLine.Split(part, -1)
-		var event sse.SSEEventResponse[O, T]
+		var event eventsource.EventSourceResponse[T]
 		for _, line := range lines {
 			if len(line) == 0 {
 				continue

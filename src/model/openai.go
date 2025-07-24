@@ -18,16 +18,17 @@ type Logprobs struct {
 	TokenLogprobs []int    `json:"token_logprobs"`
 }
 
+type StreamOption struct {
+	IncludeUsage bool `json:"include_usage"`
+}
+
 // OpenAIChatMessage represents a single message in a chat completion request or response.
 type OpenAIChatMessage struct {
 	Role         string     `json:"role"`
 	Content      string     `json:"content"`
 	ToolCalls    []ToolCall `json:"tool_calls,omitempty"`
-	FunctionCall struct {
-		Arguments string `json:"arguments"`
-		Name      string `json:"name"`
-	} `json:"function_call,omitempty"`
-	Logprobs Logprobs `json:"logprobs,omitempty"`
+	FunctionCall Function   `json:"function_call,omitempty"`
+	Logprobs     Logprobs   `json:"logprobs,omitempty"`
 }
 
 // OpenAIChatCompletionRequest represents the request body sent to the chat completion proxy.
@@ -36,9 +37,7 @@ type OpenAIChatCompletionRequest struct {
 	Temperature   float32             `json:"temperature"`
 	Messages      []OpenAIChatMessage `json:"messages,omitempty"`
 	Stream        bool                `json:"stream"`
-	StreamOptions struct {
-		IncludeUsage bool `json:"include_usage"`
-	} `json:"stream_options,omitempty"`
+	StreamOptions StreamOption        `json:"stream_options,omitempty"`
 }
 
 type Choice struct {
@@ -104,8 +103,8 @@ type Model struct {
 	OwnedBy string `json:"owned_by"`
 }
 
-// ModelList represents a list of models in the OpenAI API.
-type ModelList struct {
+// OpenAIModelList represents a list of models in the OpenAI API.
+type OpenAIModelList struct {
 	Object string  `json:"object"`
 	Data   []Model `json:"data"`
 }

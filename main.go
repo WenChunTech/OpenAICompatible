@@ -13,23 +13,23 @@ import (
 )
 
 func main() {
-	provider := provider.Provider[*model.CodeGeexChatRequest, model.CodeGeexSSEData, *model.OpenAPIChatCompletionStreamResponse]{
-		Provider: &model.CodeGeexChatRequest{},
-		Url:      constant.CodeGeexChatURL,
-		Method:   http.MethodPost,
+	provider := provider.BaseProvider[*model.CodeGeexChatRequest, *model.CodeGeexModelOptions, model.CodeGeexEventSourceData]{
+		ChatCompleteResp:   &model.CodeGeexChatRequest{},
+		ModelResp:          &model.CodeGeexModelOptions{},
+		ChatCompleteUrl:    constant.CodeGeexChatURL,
+		ChatCompleteMethod: http.MethodPost,
 		Headers: map[string]string{
 			constant.Accept:    constant.ContentTypeEventStream,
 			constant.CodeToken: config.Config.Token,
 			constant.UserAgent: constant.DefaultUserAgent,
 		},
+		ModelUrl:    constant.CodeGeexModelURL,
+		ModelMethod: http.MethodGet,
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("Received request", "method", r.Method, "path", r.URL.Path)
-		w.WriteHeader(http.StatusOK)
-	})
-	http.HandleFunc("/v1/chat/completions", provider.Handle)
-	http.HandleFunc("/v1/models", handler.ChatProxyModelHandler)
+	http.HandleFunc("/", handler.NotFoundHandler)
+	http.HandleFunc("/v1/models", provider.ModelHandle)
+	http.HandleFunc("/v1/chat/completions", provider.ChatCompleteHandle)
 
 	slog.Info("Server starting on port 8080...")
 	if err := http.ListenAndServe(":8080", nil); err != nil {

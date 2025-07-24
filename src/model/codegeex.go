@@ -65,14 +65,14 @@ func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionReq(req *OpenAIChatCompl
 	return nil
 }
 
-type CodeGeexSSEData struct {
+type CodeGeexEventSourceData struct {
 	ID           string `json:"id"`
 	Text         string `json:"text"`
 	FinishReason string `json:"finish_reason"`
 	Model        string `json:"model"`
 }
 
-func (c CodeGeexSSEData) Convert() (*OpenAPIChatCompletionStreamResponse, error) {
+func (c CodeGeexEventSourceData) Convert() (*OpenAPIChatCompletionStreamResponse, error) {
 	choice := OpenAIStreamChoice{
 		Index: 0,
 		Delta: Delta{
@@ -121,7 +121,7 @@ type CodeGeexModelOptions struct {
 	IP      string   `json:"ip"`
 }
 
-func (c CodeGeexModelOptions) Convert() (*ModelList, error) {
+func (c *CodeGeexModelOptions) Convert() (*OpenAIModelList, error) {
 	models := make([]Model, len(c.Options))
 	for i, option := range c.Options {
 		models[i] = Model{
@@ -131,7 +131,7 @@ func (c CodeGeexModelOptions) Convert() (*ModelList, error) {
 			OwnedBy: "codegeex",
 		}
 	}
-	return &ModelList{
+	return &OpenAIModelList{
 		Object: "list",
 		Data:   models,
 	}, nil

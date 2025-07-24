@@ -1,4 +1,4 @@
-package sse
+package eventsource
 
 import (
 	"encoding/json"
@@ -8,14 +8,14 @@ import (
 	"github.com/WenChunTech/OpenAICompatible/src/converter"
 )
 
-type SSEEventResponse[O any, T converter.Converter[O]] struct {
+type EventSourceResponse[T converter.ChatCompletionConverter] struct {
 	ID    string `json:"id"`
 	Event string `json:"event"`
 	Data  T      `json:"data"`
 	Retry int    `json:"retry,omitempty"`
 }
 
-func (p *SSEEventResponse[O, T]) Json2EventSource() (string, error) {
+func (p *EventSourceResponse[T]) Json2EventSource() (string, error) {
 	openapiData, err := p.Data.Convert()
 	if err != nil {
 		return "", err

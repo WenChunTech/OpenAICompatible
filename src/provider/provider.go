@@ -16,14 +16,20 @@ import (
 	"github.com/WenChunTech/OpenAICompatible/src/request"
 )
 
-type Provider[P importer.OpenAIChatCompletionImporter, C converter.Converter[O], O any] struct {
-	Provider P
-	Url      string
-	Method   string
-	Headers  map[string]string
+type BaseProvider[P importer.OpenAIChatCompletionImporter, M converter.ModelConverter, C converter.ChatCompletionConverter] struct {
+	ChatCompleteResp   P
+	ModelResp          M
+	ChatCompleteUrl    string
+	ChatCompleteMethod string
+	Headers            map[string]string
+	ModelUrl           string
+	ModelMethod        string
 }
 
-func (p *Provider[P, C, O]) validateRequest(r *http.Request) (*model.OpenAIChatCompletionRequest, error) {
+type Provider interface {
+}
+
+func (p *BaseProvider[P, M, C]) validateRequest(r *http.Request) (*model.OpenAIChatCompletionRequest, error) {
 	if r.Method != http.MethodPost {
 		return nil, errors.New("method not allowed")
 	}
@@ -37,8 +43,8 @@ func (p *Provider[P, C, O]) validateRequest(r *http.Request) (*model.OpenAIChatC
 	return &reqBody, nil
 }
 
-func (p *Provider[P, C, O]) serializeAndConvert(reqBody *model.OpenAIChatCompletionRequest) ([]byte, error) {
-	provider := p.Provider
+func (p *BaseProvider[P, M, C]) serializeAndConvert(reqBody *model.OpenAIChatCompletionRequest) ([]byte, error) {
+	provider := p.ChatCompleteResp
 	provider.ImportOpenAIChatCompletionReq(reqBody)
 	providerReqBody, err := json.Marshal(provider)
 	if err != nil {
@@ -48,10 +54,12 @@ func (p *Provider[P, C, O]) serializeAndConvert(reqBody *model.OpenAIChatComplet
 	return providerReqBody, nil
 }
 
-func (p *Provider[P, C, O]) doRequest(requestBody []byte) (*request.Response, error) {
-	builder := request.NewRequestBuilder(p.Url, p.Method)
+func (p *BaseProvider[P, M, C]) doRequest(requestBody []byte) (*request.Response, error) {
+	builder := request.NewRequestBuilder(p.ChatCompleteUrl, p.ChatCompleteMethod)
 	builder.SetJson(bytes.NewReader(requestBody))
-	builder.AddHeaders(p.Headers)
+	if p.Headers != nil {
+		builder.AddHeaders(p.Headers)
+	}
 	resp, err := builder.Do(nil)
 	if err != nil {
 		slog.Error("Request to provider failed", "error", err)
@@ -60,10 +68,11 @@ func (p *Provider[P, C, O]) doRequest(requestBody []byte) (*request.Response, er
 	return resp, nil
 }
 
-func (p *Provider[P, C, O]) handleSSEResponse(w http.ResponseWriter, resp *request.Response) {
+func (p *BaseProvider[P, M, C]) handleSSEResponse(w http.ResponseWriter, resp *request.Response) {
 	w.Header().Set(constant.ContentType, constant.ContentTypeEventStream)
 	w.Header().Set(constant.CacheControl, constant.CacheControlNoCache)
 	w.Header().Set(constant.Connection, constant.ConnectionKeepAlive)
+	defer resp.Body.Close()
 
 	sseParser := parser.NewParser()
 	flusher, ok := w.(http.Flusher)
@@ -88,7 +97,7 @@ func (p *Provider[P, C, O]) handleSSEResponse(w http.ResponseWriter, resp *reque
 	}
 }
 
-func (p *Provider[P, C, O]) Handle(w http.ResponseWriter, r *http.Request) {
+func (p *BaseProvider[P, M, C]) ChatCompleteHandle(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := p.validateRequest(r)
 	if err != nil {
 		if errors.Is(err, errors.New("method not allowed")) {
@@ -112,4 +121,35 @@ func (p *Provider[P, C, O]) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p.handleSSEResponse(w, resp)
+}
+
+func (p *BaseProvider[P, M, C]) ModelHandle(w http.ResponseWriter, r *http.Request) {
+	builder := request.NewRequestBuilder(p.ModelUrl, p.ModelMethod)
+	resp, err := builder.Do(nil)
+	if err != nil {
+		slog.Error("Request to CodeGeex failed", "error", err)
+		http.Error(w, "Failed to fetch models from CodeGeex", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	m := p.ModelResp
+	if err := resp.Json(m); err != nil {
+		slog.Error("Failed to decode CodeGeex models response", "error", err)
+		http.Error(w, "Failed to decode response from CodeGeex", http.StatusInternalServerError)
+		return
+	}
+
+	openaiModelList, err := m.Convert()
+	if err != nil {
+		slog.Error("Failed to convert to OpenAI model list", "error", err)
+		http.Error(w, "Failed to convert to OpenAI model list", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set(constant.ContentType, constant.ContentTypeJson)
+	if err := json.NewEncoder(w).Encode(openaiModelList); err != nil {
+		slog.Error("Failed to encode response", "error", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
 }
