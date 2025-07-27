@@ -1,100 +1,63 @@
 package config
 
 import (
-	"bufio"
 	"bytes"
+	"encoding/json"
 	"log/slog"
 	"os"
-	"strconv"
-	"strings"
 )
 
 const (
-	ConfigFile      = ".env"
-	LocalConfigFile = ".env.local"
+	AppConfigFile      = "config.json"
+	APPLocalConfigFile = "config.local.json"
 )
 
-const (
-	UserIDField        = "UserID"
-	UserRoleField      = "UserRole"
-	IDEField           = "IDE"
-	IDEVersionField    = "IDEVersion"
-	PluginVersionField = "PluginVersion"
-	MachineIDField     = "MachineID"
-	TalkIDField        = "TalkID"
-	LocaleField        = "Locale"
-	TokenField         = "Token"
-)
+type AppConfig struct {
+	Host     string          `json:"host,omitempty"`
+	Port     int             `json:"port"`
+	CodeGeex *CodeGeexConfig `json:"codegeex,omitempty"`
+	Qwen     *QwenConfig     `json:"qwen,omitempty"`
+}
 
 type CodeGeexConfig struct {
-	UserID        string
-	UserRole      int
-	IDE           string
-	IDEVersion    string
-	PluginVersion string
-	MachineID     string
-	TalkID        string
-	Locale        string
-	Token         string
+	UserID        string `json:"user_id,omitempty"`        // 用户ID
+	UserRole      int    `json:"user_role,omitempty"`      // 用户角色
+	IDE           string `json:"ide,omitempty"`            // IDE类型
+	IDEVersion    string `json:"ide_version,omitempty"`    // IDE版本
+	PluginVersion string `json:"plugin_version,omitempty"` // 插件版本
+	MachineID     string `json:"machine_id,omitempty"`     // 机器ID
+	TalkID        string `json:"talk_id,omitempty"`        // 对话ID
+	Locale        string `json:"locale,omitempty"`         // 语言
+	Token         string `json:"token"`                    // 访问令牌
 }
 
-var Config = &CodeGeexConfig{}
+type QwenConfig struct {
+	Token string `json:"token"`
+}
+
+var Config = &AppConfig{}
 
 func init() {
-	if _, err := os.Stat(LocalConfigFile); err == nil {
-		buffer, err := os.ReadFile(LocalConfigFile)
+	if _, err := os.Stat(APPLocalConfigFile); err == nil {
+		buffer, err := os.ReadFile(APPLocalConfigFile)
 		if err != nil {
-			slog.Error("Failed to read local config file", "error", err)
+			slog.Error("Failed to read app local config file", "error", err)
 		}
-		parseConfig(buffer)
+		err = json.NewDecoder(bytes.NewReader(buffer)).Decode(Config)
+		if err != nil {
+			slog.Error("Failed to parse app config file", "error", err)
+		}
+
 	} else {
-		buffer, err := os.ReadFile(ConfigFile)
+		slog.Error("App config file not found", "file", AppConfigFile)
+		buffer, err := os.ReadFile(AppConfigFile)
 		if err != nil {
-			slog.Error("Failed to read config file", "error", err)
-			panic("Config file not found")
+			slog.Error("Failed to read app config file", "error", err)
 		}
-		parseConfig(buffer)
-	}
-}
-
-func parseConfig(buffer []byte) {
-	scanner := bufio.NewScanner(bytes.NewReader(buffer))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" || line[0] == '#' {
-			continue
-		}
-
-		parts := bytes.SplitN([]byte(line), []byte("="), 2)
-		if len(parts) < 2 {
-			slog.Error("Invalid config line, skipping", "line", line)
-			continue
-		}
-
-		key := strings.TrimSpace(string(parts[0]))
-		value := strings.Trim(strings.TrimSpace(string(parts[1])), `"`)
-
-		switch key {
-		case UserIDField:
-			Config.UserID = value
-		case UserRoleField:
-			Config.UserRole, _ = strconv.Atoi(value)
-		case IDEField:
-			Config.IDE = value
-		case IDEVersionField:
-			Config.IDEVersion = value
-		case PluginVersionField:
-			Config.PluginVersion = value
-		case MachineIDField:
-			Config.MachineID = value
-		case TalkIDField:
-			Config.TalkID = value
-		case LocaleField:
-			Config.Locale = value
-		case TokenField:
-			Config.Token = value
-		default:
-			slog.Warn("Unknown config key, skipping", "key", key)
+		err = json.NewDecoder(bytes.NewReader(buffer)).Decode(Config)
+		if err != nil {
+			slog.Error("Failed to parse app local config file", "error", err)
+			panic("App local config file not found")
 		}
 	}
 }

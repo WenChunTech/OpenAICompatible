@@ -1,68 +1,116 @@
-# OpenAI API Compatible
+# OpenAICompatible
 
-## 项目简介
+一个提供多种大语言模型服务提供商接口的中间件，支持动态切换服务提供商，提供OpenAI兼容的API接口。
 
-本项目是一个与 OpenAI API 兼容的代理服务。它旨在提供一个与 OpenAI 官方 API 格式一致的接口，从而方便地将现有应用或生态工具无缝对接到各类大语言模型服务，而无需修改大量代码。
+## 特性
 
-## 项目结构
+- 🔄 支持多种服务提供商（CodeGeex、Qwen等）
+- 🎯 提供OpenAI兼容的API接口
+- 🔌 易于扩展新的服务提供商
+- 🛠️ 支持跨平台（Windows、Linux、MacOS）
+- 🚀 简单易用的配置
 
-项目代码主要位于 `src` 目录下，并遵循模块化的设计原则，各个模块职责清晰：
+## 架构
 
+```mermaid
+graph LR
+    Client[客户端] --> |OpenAI兼容请求| Server[OpenAICompatible服务]
+    Server --> |根据配置路由| Provider1[CodeGeex Provider]
+    Server --> |根据配置路由| Provider2[Qwen Provider]
+    Provider1 --> |转换请求| CodeGeex[CodeGeex API]
+    Provider2 --> |转换请求| Qwen[Qwen API]
 ```
-src/
-├── config/      # 负责加载和管理项目配置
-├── constant/    # 定义项目中使用的常量
-├── converter/   # 负责在不同数据模型之间进行转换（例如，将特定模型的响应转换为 OpenAI 格式）
-├── error/       # 定义和处理自定义错误
-├── handler/     # 存放 HTTP 请求处理器，是 API 的业务逻辑核心
-├── model/       # 定义项目中使用的数据结构，如 API 请求体和响应体
-├── parser/      # 负责解析数据流或请求
-├── request/     # 封装了向上游服务发起 HTTP 请求的逻辑
-└── sse/         # 实现 Server-Sent Events (SSE)，用于支持流式 API 响应
+
+## 安装
+
+### 预编译二进制
+
+从[releases](https://github.com/WenChunTech/OpenAICompatible/releases)页面下载适合你系统的预编译二进制文件。
+
+### 从源码构建
+
+需求：
+- Go 1.24.2 或更高版本
+
+```bash
+# 克隆仓库
+git clone https://github.com/WenChunTech/OpenAICompatible.git
+cd OpenAICompatible
+
+# 构建
+./build.sh
 ```
 
-## API 端点
+## 配置
 
-服务启动后，会暴露以下兼容 OpenAI 格式的 API 端点：
+创建`config.json`配置文件：
 
-*   `GET /v1/models`
-    *   **功能**: 获取当前代理服务支持的模型列表。
-    *   **处理程序**: `handler.ChatProxyModelHandler`
-    *   **描述**: 返回一个包含多个模型信息的 JSON 数组，格式与 OpenAI 的 `v1/models` 接口一致。
+```json
+{
+    "host": "0.0.0.0",
+    "port": 8080,
+    "codegeex": {
+        "token": "你的CodeGeex token"
+    },
+    "qwen": {
+        "token": "你的Qwen token"
+    }
+}
+```
 
-*   `POST /v1/chat/completions`
-    *   **功能**: 发起对话请求。
-    *   **处理程序**: `handler.ChatProxyChatHandler`
-    *   **描述**: 接收 OpenAI 格式的聊天请求，并代理到后端的语言模型服务。支持流式（`stream: true`）和非流式两种模式。
+### 配置项说明
 
-## 如何运行
+- `host`: 服务监听地址
+- `port`: 服务监听端口
+- `codegeex`: CodeGeex服务配置
+  - `token`: 访问令牌
+- `qwen`: Qwen服务配置
+  - `token`: 访问令牌
 
-您可以按照以下步骤在本地启动此服务：
+## API使用示例
 
-1.  **克隆项目**
-    ```bash
-    git clone https://github.com/WenChunTech/OpenapiCompatible.git
-    ```
+### 聊天补全API
 
-2.  **进入项目目录**
-    ```bash
-    cd OpenapiCompatible
-    ```
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [
+      {
+        "role": "user",
+        "content": "你好"
+      }
+    ]
+  }'
+```
 
-3.  **运行服务**
-    ```bash
-    go run main.go
-    ```
+### 获取模型列表API
 
-4.  服务启动后，您将在控制台看到以下日志，并可以通过 `http://localhost:8080` 访问服务。
-    ```
-    Server starting on port 8080...
-    ```
+```bash
+curl http://localhost:8080/v1/models
+```
 
-## 贡献
+## 扩展新的服务提供商
 
-如果您有任何改进意见或想要贡献代码，请随时提交 Pull Request 或创建 Issue。提交规范请参考 [Commit Rule](./COMMIT_RULE.md)。
+1. 在`src/provider`目录下创建新的服务提供商包
+2. 实现`Provider`接口：
+```go
+type Provider interface {
+    HandleChatCompleteRequest(ctx context.Context, r *model.OpenAIChatCompletionRequest) (*request.Response, error)
+    HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error
+    HandleListModelRequest(ctx context.Context) (*request.Response, error)
+    HandleListModelResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error
+}
+```
+3. 在`config.json`中添加相应的配置项
+4. 在`main.go`中注册新的服务提供商
+
+## 贡献指南
+
+如果您想为OpenAICompatible项目做出贡献，请遵循[COMMIT_RULE.md](COMMIT_RULE.md)文件中的提交规则。
+
 
 ## 许可证
 
-本项目采用 MIT 许可证。请查看 `LICENSE` 文件了解更多信息。
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件

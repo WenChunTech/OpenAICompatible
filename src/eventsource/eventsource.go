@@ -1,6 +1,7 @@
 package eventsource
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -15,9 +16,9 @@ type EventSourceResponse[T converter.ChatCompletionConverter] struct {
 	Retry int    `json:"retry,omitempty"`
 }
 
-func (p *EventSourceResponse[T]) Json2EventSource() (string, error) {
+func (p *EventSourceResponse[T]) JSONToEventStream(ctx context.Context) (string, error) {
 	data := *p.Data
-	openapiData, err := data.Convert()
+	openapiData, err := data.Convert(ctx)
 	if err != nil {
 		return "", err
 	}

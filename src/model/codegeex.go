@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
+	"github.com/WenChunTech/OpenAICompatible/src/util"
 )
 
 type Candidate struct {
@@ -38,7 +40,7 @@ type CodeGeexChatRequest struct {
 	History       []History  `json:"history"`
 }
 
-func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionReq(req *OpenAIChatCompletionRequest) error {
+func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Context, req *OpenAIChatCompletionRequest) error {
 	var promptBuilder strings.Builder
 	for _, message := range req.Messages {
 		messageContent, err := json.Marshal(message)
@@ -49,17 +51,26 @@ func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionReq(req *OpenAIChatCompl
 		promptBuilder.WriteString(string(messageContent))
 		promptBuilder.WriteString("\n")
 	}
+	talkID := config.Config.CodeGeex.TalkID
+	if talkID == "" {
+		id, err := util.GenerateUUID()
+		if err != nil {
+			slog.Error("Failed to generate UUID", "error", err)
+			return err
+		}
+		talkID = id
+	}
 
 	*c = CodeGeexChatRequest{
-		UserID:        config.Config.UserID,
-		UserRole:      config.Config.UserRole,
-		IDE:           config.Config.IDE,
-		IDEVersion:    config.Config.IDEVersion,
-		PluginVersion: config.Config.PluginVersion,
+		UserID:        config.Config.CodeGeex.UserID,
+		UserRole:      config.Config.CodeGeex.UserRole,
+		IDE:           config.Config.CodeGeex.IDE,
+		IDEVersion:    config.Config.CodeGeex.IDEVersion,
+		PluginVersion: config.Config.CodeGeex.PluginVersion,
 		Prompt:        promptBuilder.String(),
-		MachineID:     config.Config.MachineID,
-		TalkID:        config.Config.TalkID,
-		Locale:        config.Config.Locale,
+		MachineID:     config.Config.CodeGeex.MachineID,
+		TalkID:        talkID,
+		Locale:        config.Config.CodeGeex.Locale,
 		Model:         req.Model,
 	}
 	return nil
@@ -72,7 +83,7 @@ type CodeGeexEventSourceData struct {
 	Model        string `json:"model"`
 }
 
-func (c CodeGeexEventSourceData) Convert() (*OpenAPIChatCompletionStreamResponse, error) {
+func (c CodeGeexEventSourceData) Convert(ctx context.Context) (*OpenAPIChatCompletionStreamResponse, error) {
 	choice := OpenAIStreamChoice{
 		Index: 0,
 		Delta: Delta{
@@ -121,7 +132,7 @@ type CodeGeexModelOptions struct {
 	IP      string   `json:"ip"`
 }
 
-func (c *CodeGeexModelOptions) Convert() (*OpenAIModelList, error) {
+func (c *CodeGeexModelOptions) Convert(ctx context.Context) (*OpenAIModelList, error) {
 	models := make([]Model, len(c.Options))
 	for i, option := range c.Options {
 		models[i] = Model{

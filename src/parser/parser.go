@@ -33,7 +33,7 @@ func Parse[T converter.ChatCompletionConverter](p *Parser, data []byte) []events
 	parts := strings.Split(fullData, "\n\n")
 	// The last part may be incomplete. Save it for the next call.
 	lastPartIndex := len(parts) - 1
-	if lastPartIndex >= 0 && fullData[len(fullData)-len("\n\n"):] != "\n\n" {
+	if lastPartIndex >= 0 && !strings.HasSuffix(fullData, "\n\n") {
 		p.reminder.WriteString(parts[lastPartIndex])
 		parts = parts[:lastPartIndex]
 	}

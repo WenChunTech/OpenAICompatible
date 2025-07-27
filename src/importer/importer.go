@@ -1,11 +1,16 @@
 package importer
 
-import "github.com/WenChunTech/OpenAICompatible/src/model"
+import (
+	"context"
+
+	"github.com/WenChunTech/OpenAICompatible/src/model"
+)
 
 type Importer[T any] interface {
 	Import(T) error
 }
 
+// OpenAIChatCompletionImporter is an interface for importing OpenAI chat completion requests.
 type OpenAIChatCompletionImporter interface {
-	ImportOpenAIChatCompletionReq(req *model.OpenAIChatCompletionRequest) error
+	ImportOpenAIChatCompletionRequest(ctx context.Context, req *model.OpenAIChatCompletionRequest) error
 }

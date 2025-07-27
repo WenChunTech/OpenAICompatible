@@ -32,5 +32,8 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Error("Failed to marshal not found message", "error", err)
 	}
 	w.WriteHeader(http.StatusNotFound)
-	w.Write(jsonMsg)
+	_, err = w.Write(jsonMsg)
+	if err != nil {
+		slog.Error("Failed to write response", "error", err)
+	}
 }

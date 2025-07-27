@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -84,11 +85,11 @@ func (r *RequestBuilder) EnableSSE() *RequestBuilder {
 	return r
 }
 
-func (r *RequestBuilder) Do(client *http.Client) (*Response, error) {
+func (r *RequestBuilder) Do(ctx context.Context, client *http.Client) (*Response, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	resp, err := client.Do(r.Request)
+	resp, err := client.Do(r.Request.WithContext(ctx))
 	if err != nil {
 		slog.Error("Failed to execute request", "error", err)
 		return nil, err
@@ -97,14 +98,12 @@ func (r *RequestBuilder) Do(client *http.Client) (*Response, error) {
 }
 
 func (r *Response) Json(v interface{}) error {
-	body, err := io.ReadAll(r.Body)
+	err := json.NewDecoder(r.Body).Decode(v)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		slog.Error("Failed to decode response body", "error", err)
+		return err
 	}
-	defer r.Body.Close()
-	if err := json.Unmarshal(body, v); err != nil {
-		return fmt.Errorf("failed to unmarshal JSON: %w", err)
-	}
+
 	return nil
 }
 
@@ -113,7 +112,6 @@ func (r *Response) Text() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
-	defer r.Body.Close()
 	return string(body), nil
 }
 
@@ -122,7 +120,6 @@ func (r *Response) Bytes() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
-	defer r.Body.Close()
 	return body, nil
 }
 
@@ -141,7 +138,14 @@ func (r *Response) EventStream() (<-chan []byte, <-chan error) {
 		defer close(errChan)
 		defer r.Body.Close() // Ensure the response body is closed
 
-		buf := make([]byte, constant.BUFFER_SIZE)
+		if r.StatusCode != http.StatusOK {
+			msg, _ := io.ReadAll(r.Body)
+			errMsg := string(msg)
+			slog.Error("request failed", "err_msg", errMsg)
+			errChan <- fmt.Errorf("status code: %d, err_msg: %s", r.StatusCode, errMsg)
+		}
+
+		buf := make([]byte, constant.BufferSize)
 		for {
 			n, err := r.Body.Read(buf)
 			if n > 0 {
