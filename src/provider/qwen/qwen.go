@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/model"
 	"github.com/WenChunTech/OpenAICompatible/src/provider"
@@ -16,12 +17,18 @@ import (
 	"github.com/WenChunTech/OpenAICompatible/src/responser"
 )
 
+var Provider *QwenProvider
+
 type QwenProvider struct {
 	*provider.BaseProvider
 
 	// ChatID string
 	// Model  string
 	// Token  string
+}
+
+func init() {
+	Provider = NewQwenProvider(config.Config.Qwen.Token)
 }
 
 func NewQwenProvider(token string) *QwenProvider {
@@ -73,6 +80,7 @@ func (p *QwenProvider) HandleChatCompleteRequest(ctx context.Context, r *model.O
 	}
 	return request.NewRequestBuilder(constant.QwenChatURL, http.MethodPost).AddQuery(string(constant.ChatIDKey), chatIDResp.Data.ID).AddHeaders(p.Headers).SetJson(bytes.NewReader(reqBody)).Do(ctx, nil)
 }
+
 func (p *QwenProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
 	handler := responser.EventStreamHandler[model.QwenChatCompleteResponse]{}
 	return handler.Handle(ctx, w, r)
@@ -83,7 +91,8 @@ func (p *QwenProvider) HandleListModelRequest(ctx context.Context) (*request.Res
 	// 创建一个新的请求构建器，传入模型URL和模型方法
 	return request.NewRequestBuilder(p.ModelURL, p.ModelMethod).AddHeaders(p.Headers).Do(ctx, nil)
 }
-func (p *QwenProvider) HandleListModelResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
+
+func (p *QwenProvider) HandleListModelResponse(ctx context.Context, r *request.Response) (*model.OpenAIModelListResponse, error) {
 	handler := responser.ModelListHandler[*model.QwenListModelResponse]{}
-	return handler.Handle(ctx, w, r)
+	return handler.Handle(ctx, r)
 }

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/model"
 	"github.com/WenChunTech/OpenAICompatible/src/provider"
@@ -15,8 +16,14 @@ import (
 	"github.com/WenChunTech/OpenAICompatible/src/responser"
 )
 
+var Provider *CodeGeexProvider
+
 type CodeGeexProvider struct {
 	*provider.BaseProvider
+}
+
+func init() {
+	Provider = NewCodeGeexProvider(config.Config.CodeGeex.Token)
 }
 
 func NewCodeGeexProvider(token string) *CodeGeexProvider {
@@ -51,6 +58,7 @@ func (p *CodeGeexProvider) HandleChatCompleteRequest(ctx context.Context, r *mod
 	}
 	return request.NewRequestBuilder(p.ChatCompleteURL, p.ChatCompleteMethod).AddHeaders(p.Headers).SetJson(bytes.NewReader(requestBody)).Do(ctx, nil)
 }
+
 func (p *CodeGeexProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
 	handler := responser.EventStreamHandler[model.CodeGeexEventSourceData]{}
 	return handler.Handle(ctx, w, r)
@@ -60,7 +68,7 @@ func (p *CodeGeexProvider) HandleListModelRequest(ctx context.Context) (*request
 	return request.NewRequestBuilder(p.ModelURL, p.ModelMethod).Do(ctx, nil)
 }
 
-func (p *CodeGeexProvider) HandleListModelResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
+func (p *CodeGeexProvider) HandleListModelResponse(ctx context.Context, r *request.Response) (*model.OpenAIModelListResponse, error) {
 	handler := responser.ModelListHandler[*model.CodeGeexModelOptions]{}
-	return handler.Handle(ctx, w, r)
+	return handler.Handle(ctx, r)
 }

@@ -1,10 +1,12 @@
 {
     "host": "0.0.0.0",
     "port": 8080,
-    "codegeext": {
+    "codegeex": {
+        "prefix": "codegeex",
         "token": ""
     },
     "qwen": {
+        "prefix": "qwen",
         "token": ""
     }
 }

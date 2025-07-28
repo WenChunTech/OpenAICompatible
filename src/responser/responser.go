@@ -10,6 +10,7 @@ import (
 
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/converter"
+	"github.com/WenChunTech/OpenAICompatible/src/model"
 	"github.com/WenChunTech/OpenAICompatible/src/parser"
 	"github.com/WenChunTech/OpenAICompatible/src/request"
 )
@@ -78,25 +79,14 @@ func (h *EventStreamHandler[C]) Handle(ctx context.Context, w http.ResponseWrite
 type ModelListHandler[C converter.ModelConverter] struct {
 }
 
-func (h *ModelListHandler[C]) Handle(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
+func (h *ModelListHandler[C]) Handle(ctx context.Context, r *request.Response) (*model.OpenAIModelListResponse, error) {
 	defer r.Body.Close()
 	var providerModel C
 	if err := r.Json(&providerModel); err != nil {
 		slog.Error("Failed to decode provider models response", "error", err)
-		return fmt.Errorf("failed to decode provider models response: %w", err)
+		return nil, fmt.Errorf("failed to decode provider models response: %w", err)
 	}
 
-	openaiModelList, err := providerModel.Convert(ctx)
-	if err != nil {
-		slog.Error("Failed to convert to OpenAI model list", "error", err)
-		return fmt.Errorf("failed to convert to OpenAI model list: %w", err)
-	}
+	return providerModel.Convert(ctx)
 
-	w.Header().Set(constant.ContentType, constant.ContentTypeJson)
-	if err := json.NewEncoder(w).Encode(openaiModelList); err != nil {
-		slog.Error("Failed to encode response", "error", err)
-		return fmt.Errorf("failed to encode response: %w", err)
-	}
-
-	return nil
 }

@@ -103,8 +103,8 @@ type Model struct {
 	OwnedBy string `json:"owned_by"`
 }
 
-// OpenAIModelList represents a list of models in the OpenAI API.
-type OpenAIModelList struct {
-	Object string  `json:"object"`
-	Data   []Model `json:"data"`
+// OpenAIModelListResponse represents a list of models in the OpenAI API.
+type OpenAIModelListResponse struct {
+	Object string   `json:"object"`
+	Data   []*Model `json:"data"`
 }

@@ -1,30 +1,22 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 
+	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/model"
-	"github.com/WenChunTech/OpenAICompatible/src/request"
+	"github.com/WenChunTech/OpenAICompatible/src/provider"
 )
 
-type Provider interface {
-	HandleChatCompleteRequest(ctx context.Context, r *model.OpenAIChatCompletionRequest) (*request.Response, error)
-	HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error
-
-	HandleListModelRequest(ctx context.Context) (*request.Response, error)
-	HandleListModelResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error
-}
-
-type Handler[P Provider] struct {
+type Handler[P provider.Provider] struct {
 	P P
 }
 
-func (p *Handler[P]) validateRequest(ctx context.Context, r *http.Request) (*model.OpenAIChatCompletionRequest, error) {
+func (p *Handler[P]) validateRequest(r *http.Request) (*model.OpenAIChatCompletionRequest, error) {
 	if r.Method != http.MethodPost {
 		return nil, errors.New("method not allowed")
 	}
@@ -41,7 +33,7 @@ func (p *Handler[P]) validateRequest(ctx context.Context, r *http.Request) (*mod
 func (p *Handler[P]) HandleChatComplete(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Start request chat complete")
 	ctx := r.Context()
-	reqBody, err := p.validateRequest(ctx, r)
+	reqBody, err := p.validateRequest(r)
 	if err != nil {
 		if errors.Is(err, errors.New("method not allowed")) {
 			http.Error(w, err.Error(), http.StatusMethodNotAllowed)
@@ -73,9 +65,16 @@ func (p *Handler[P]) HandleListModel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = p.P.HandleListModelResponse(ctx, w, resp)
+	openaiModelList, err := p.P.HandleListModelResponse(ctx, resp)
 	if err != nil {
 		slog.Error("HandleListModelResponse failed", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	w.Header().Set(constant.ContentType, constant.ContentTypeJson)
+	if err := json.NewEncoder(w).Encode(openaiModelList); err != nil {
+		slog.Error("Failed to encode response", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
 }

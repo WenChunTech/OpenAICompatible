@@ -59,10 +59,10 @@ type Data struct {
 	ActionIds []any  `json:"action_ids"`
 }
 
-func (q *QwenListModelResponse) Convert(ctx context.Context) (*OpenAIModelList, error) {
-	models := make([]Model, 0, len(q.Data))
+func (q *QwenListModelResponse) Convert(ctx context.Context) (*OpenAIModelListResponse, error) {
+	models := make([]*Model, 0, len(q.Data))
 	for _, data := range q.Data {
-		models = append(models, Model{
+		models = append(models, &Model{
 			ID:      data.ID,
 			Object:  data.Object,
 			Created: int64(data.Info.CreatedAt),
@@ -70,7 +70,7 @@ func (q *QwenListModelResponse) Convert(ctx context.Context) (*OpenAIModelList, 
 		})
 	}
 
-	return &OpenAIModelList{
+	return &OpenAIModelListResponse{
 		Data: models,
 	}, nil
 }

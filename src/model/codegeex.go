@@ -132,17 +132,17 @@ type CodeGeexModelOptions struct {
 	IP      string   `json:"ip"`
 }
 
-func (c *CodeGeexModelOptions) Convert(ctx context.Context) (*OpenAIModelList, error) {
-	models := make([]Model, len(c.Options))
+func (c *CodeGeexModelOptions) Convert(ctx context.Context) (*OpenAIModelListResponse, error) {
+	models := make([]*Model, len(c.Options))
 	for i, option := range c.Options {
-		models[i] = Model{
+		models[i] = &Model{
 			ID:      option.ID,
 			Object:  "model",
 			Created: time.Now().Unix(),
 			OwnedBy: "codegeex",
 		}
 	}
-	return &OpenAIModelList{
+	return &OpenAIModelListResponse{
 		Object: "list",
 		Data:   models,
 	}, nil

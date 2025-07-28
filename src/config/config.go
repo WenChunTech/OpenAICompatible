@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
+
+	"github.com/WenChunTech/OpenAICompatible/src/constant"
 )
 
 const (
@@ -29,10 +31,12 @@ type CodeGeexConfig struct {
 	TalkID        string `json:"talk_id,omitempty"`        // 对话ID
 	Locale        string `json:"locale,omitempty"`         // 语言
 	Token         string `json:"token"`                    // 访问令牌
+	Prefix        string `json:"prefix,omitempty"`         // 命令前缀
 }
 
 type QwenConfig struct {
-	Token string `json:"token"`
+	Prefix string `json:"prefix,omitempty"`
+	Token  string `json:"token"`
 }
 
 var Config = &AppConfig{}
@@ -59,5 +63,12 @@ func init() {
 			slog.Error("Failed to parse app local config file", "error", err)
 			panic("App local config file not found")
 		}
+	}
+
+	if Config.CodeGeex != nil && len(Config.CodeGeex.Prefix) != 0 {
+		Config.CodeGeex.Prefix = constant.CodeGeexPrefix
+	}
+	if Config.Qwen != nil && len(Config.Qwen.Prefix) != 0 {
+		Config.Qwen.Prefix = constant.QwenPrefix
 	}
 }

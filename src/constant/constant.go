@@ -32,12 +32,14 @@ const DefaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleW
 const (
 	CodeGeexChatURL  = "https://codegeex.cn/prod/code/chatCodeSseV3/chat"
 	CodeGeexModelURL = "https://codegeex.cn/prod/v3/chat/model"
+	CodeGeexPrefix   = "codegeex"
 )
 
 const (
 	QwenChatURL  = "https://chat.qwen.ai/api/v2/chat/completions"
 	QwenChatID   = "https://chat.qwen.ai/api/v2/chats/new"
 	QwenModelURL = "https://chat.qwen.ai/api/models"
+	QwenPrefix   = "qwen"
 )
 
 const (

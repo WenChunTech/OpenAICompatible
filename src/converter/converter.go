@@ -17,5 +17,5 @@ type ChatCompletionConverter interface {
 
 // ModelConverter is an interface for converting model list responses.
 type ModelConverter interface {
-	Convert(ctx context.Context) (*model.OpenAIModelList, error)
+	Convert(ctx context.Context) (*model.OpenAIModelListResponse, error)
 }
