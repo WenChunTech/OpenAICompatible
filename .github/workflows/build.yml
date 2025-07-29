@@ -31,7 +31,7 @@ jobs:
         id: git-cliff
         with:
           config: cliff.toml
-          args: --latest --no-exec --github-repo ${{ github.repository }}
+          args: --latest --tag ${{ github.ref_name }} --github-repo ${{ github.repository }} --no-exec
         env:
           OUTPUT: CHANGELOG.md
 
