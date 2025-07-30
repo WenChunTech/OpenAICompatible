@@ -30,19 +30,6 @@ const (
 const DefaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.102.0 Chrome/134.0.6998.205 Electron/35.6.0 Safari/537.36"
 
 const (
-	CodeGeexChatURL  = "https://codegeex.cn/prod/code/chatCodeSseV3/chat"
-	CodeGeexModelURL = "https://codegeex.cn/prod/v3/chat/model"
-	CodeGeexPrefix   = "codegeex"
-)
-
-const (
-	QwenChatURL  = "https://chat.qwen.ai/api/v2/chat/completions"
-	QwenChatID   = "https://chat.qwen.ai/api/v2/chats/new"
-	QwenModelURL = "https://chat.qwen.ai/api/models"
-	QwenPrefix   = "qwen"
-)
-
-const (
 	UserRole      = "user"
 	AssistantRole = "assistant"
 )
@@ -51,4 +38,31 @@ type ContextKey string
 
 const (
 	ChatIDKey ContextKey = "chat_id"
+)
+
+const (
+	HTTPSScheme = "https"
+	HTTPScheme  = "http"
+)
+
+const (
+	CodeGeexPrefix           = "codegeex"
+	CodeGeexHost             = "codegeex.cn"
+	CodeGeexChatCompletePath = "/prod/code/chatCodeSseV3/chat"
+	CodeGeexModelListPath    = "/prod/v3/chat/model"
+
+	CodeGeexChatCompleteURL = "https://codegeex.cn/prod/code/chatCodeSseV3/chat"
+	CodeGeexModelListURL    = "https://codegeex.cn/prod/v3/chat/model"
+)
+
+const (
+	QwenPrefix           = "qwen"
+	QwenHost             = "chat.qwen.ai"
+	QwenModelListPath    = "/api/models"
+	QwenChatIDPath       = "/api/v2/chats/new"
+	QwenChatCompletePath = "/api/v2/chat/completions"
+
+	QwenChatCompleteURL = "https://chat.qwen.ai/api/v2/chat/completions"
+	QwenChatID          = "https://chat.qwen.ai/api/v2/chats/new"
+	QwenModelListURL    = "https://chat.qwen.ai/api/models"
 )

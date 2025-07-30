@@ -11,17 +11,33 @@ import (
 
 	"github.com/WenChunTech/OpenAICompatible/src/model"
 	"github.com/WenChunTech/OpenAICompatible/src/provider"
+	"github.com/WenChunTech/OpenAICompatible/src/provider/codegeex"
+	"github.com/WenChunTech/OpenAICompatible/src/provider/qwen"
 )
 
 const Object = "model"
 
-type HandlerManager struct {
+type ProviderManager struct {
 	PrefixMap map[string]provider.Provider
 	ModelList *model.OpenAIModelListResponse
 }
 
-func NewHandlerManager() *HandlerManager {
-	return &HandlerManager{
+func InitProviderManager() *ProviderManager {
+	context := context.Background()
+	manager := NewProviderManager()
+	err := manager.RegisterProvider(context, "codegeex", codegeex.Provider)
+	if err != nil {
+		slog.Error("Failed to register codegeex provider", "error", err)
+	}
+	err = manager.RegisterProvider(context, "qwen", qwen.Provider)
+	if err != nil {
+		slog.Error("Failed to register qwen provider", "error", err)
+	}
+	return manager
+}
+
+func NewProviderManager() *ProviderManager {
+	return &ProviderManager{
 		PrefixMap: make(map[string]provider.Provider),
 		ModelList: &model.OpenAIModelListResponse{
 			Object: Object,
@@ -29,7 +45,7 @@ func NewHandlerManager() *HandlerManager {
 	}
 }
 
-func (m *HandlerManager) RegisterHandler(ctx context.Context, prefix string, provider provider.Provider) error {
+func (m *ProviderManager) RegisterProvider(ctx context.Context, prefix string, provider provider.Provider) error {
 	resp, err := provider.HandleListModelRequest(ctx)
 	if err != nil {
 		slog.Error("Failed to handle list model request", "error", err)
@@ -51,7 +67,7 @@ func (m *HandlerManager) RegisterHandler(ctx context.Context, prefix string, pro
 	return nil
 }
 
-func (m *HandlerManager) validateRequest(r *http.Request) (*model.OpenAIChatCompletionRequest, error) {
+func (m *ProviderManager) validateRequest(r *http.Request) (*model.OpenAIChatCompletionRequest, error) {
 	if r.Method != http.MethodPost {
 		return nil, errors.New("method not allowed")
 	}
@@ -65,7 +81,7 @@ func (m *HandlerManager) validateRequest(r *http.Request) (*model.OpenAIChatComp
 	return &reqBody, nil
 }
 
-func (m *HandlerManager) HandleChatComplete(w http.ResponseWriter, r *http.Request) {
+func (m *ProviderManager) HandleChatComplete(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Start request chat complete by handler manager")
 	ctx := r.Context()
 	reqBody, err := m.validateRequest(r)
@@ -98,7 +114,7 @@ func (m *HandlerManager) HandleChatComplete(w http.ResponseWriter, r *http.Reque
 	http.Error(w, "Model not found", http.StatusNotFound)
 }
 
-func (m *HandlerManager) HandleListModel(w http.ResponseWriter, r *http.Request) {
+func (m *ProviderManager) HandleListModel(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Start request list model by handler manager")
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(m.ModelList); err != nil {

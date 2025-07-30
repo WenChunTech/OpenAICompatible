@@ -35,9 +35,9 @@ func NewCodeGeexProvider(token string) *CodeGeexProvider {
 
 	return &CodeGeexProvider{
 		BaseProvider: &provider.BaseProvider{
-			ChatCompleteURL:    constant.CodeGeexChatURL,
+			ChatCompleteURL:    constant.CodeGeexChatCompleteURL,
 			ChatCompleteMethod: http.MethodPost,
-			ModelURL:           constant.CodeGeexModelURL,
+			ModelURL:           constant.CodeGeexModelListURL,
 			ModelMethod:        http.MethodGet,
 			Headers:            headers,
 		},

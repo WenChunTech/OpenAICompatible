@@ -37,9 +37,9 @@ func NewQwenProvider(token string) *QwenProvider {
 	}
 	return &QwenProvider{
 		BaseProvider: &provider.BaseProvider{
-			ChatCompleteURL:    constant.QwenChatURL,
+			ChatCompleteURL:    constant.QwenChatCompleteURL,
 			ChatCompleteMethod: http.MethodPost,
-			ModelURL:           constant.QwenModelURL,
+			ModelURL:           constant.QwenModelListURL,
 			ModelMethod:        http.MethodGet,
 			Headers:            headers,
 		},
@@ -78,7 +78,7 @@ func (p *QwenProvider) HandleChatCompleteRequest(ctx context.Context, r *model.O
 	if err != nil {
 		slog.Error("Failed to marshal chatcomplete request body", "error", err)
 	}
-	return request.NewRequestBuilder(constant.QwenChatURL, http.MethodPost).WithQuery(string(constant.ChatIDKey), chatIDResp.Data.ID).WithHeaders(p.Headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
+	return request.NewRequestBuilder(constant.QwenChatCompleteURL, http.MethodPost).WithQuery(string(constant.ChatIDKey), chatIDResp.Data.ID).WithHeaders(p.Headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
 }
 
 func (p *QwenProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
