@@ -56,7 +56,7 @@ func (p *QwenProvider) HandleChatCompleteRequest(ctx context.Context, r *model.O
 	if err != nil {
 		slog.Error("Failed to marshal chatid request body", "error", err)
 	}
-	resp, err := request.NewRequestBuilder(constant.QwenChatID, http.MethodPost).AddHeaders(p.Headers).SetJson(bytes.NewReader(reqBody)).Do(ctx, nil)
+	resp, err := request.NewRequestBuilder(constant.QwenChatID, http.MethodPost).WithHeaders(p.Headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
 	if err != nil {
 		slog.Error("Failed to send request", "error", err)
 	}
@@ -78,7 +78,7 @@ func (p *QwenProvider) HandleChatCompleteRequest(ctx context.Context, r *model.O
 	if err != nil {
 		slog.Error("Failed to marshal chatcomplete request body", "error", err)
 	}
-	return request.NewRequestBuilder(constant.QwenChatURL, http.MethodPost).AddQuery(string(constant.ChatIDKey), chatIDResp.Data.ID).AddHeaders(p.Headers).SetJson(bytes.NewReader(reqBody)).Do(ctx, nil)
+	return request.NewRequestBuilder(constant.QwenChatURL, http.MethodPost).WithQuery(string(constant.ChatIDKey), chatIDResp.Data.ID).WithHeaders(p.Headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
 }
 
 func (p *QwenProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
@@ -89,7 +89,7 @@ func (p *QwenProvider) HandleChatCompleteResponse(ctx context.Context, w http.Re
 // HandleListModelRequest 函数用于处理列表模型请求
 func (p *QwenProvider) HandleListModelRequest(ctx context.Context) (*request.Response, error) {
 	// 创建一个新的请求构建器，传入模型URL和模型方法
-	return request.NewRequestBuilder(p.ModelURL, p.ModelMethod).AddHeaders(p.Headers).Do(ctx, nil)
+	return request.NewRequestBuilder(p.ModelURL, p.ModelMethod).WithHeaders(p.Headers).Do(ctx, nil)
 }
 
 func (p *QwenProvider) HandleListModelResponse(ctx context.Context, r *request.Response) (*model.OpenAIModelListResponse, error) {

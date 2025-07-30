@@ -56,7 +56,7 @@ func (p *CodeGeexProvider) HandleChatCompleteRequest(ctx context.Context, r *mod
 		slog.Error("Failed to marshal request body", "error", err)
 		return nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
-	return request.NewRequestBuilder(p.ChatCompleteURL, p.ChatCompleteMethod).AddHeaders(p.Headers).SetJson(bytes.NewReader(requestBody)).Do(ctx, nil)
+	return request.NewRequestBuilder(p.ChatCompleteURL, p.ChatCompleteMethod).WithHeaders(p.Headers).WithJson(bytes.NewReader(requestBody)).Do(ctx, nil)
 }
 
 func (p *CodeGeexProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {

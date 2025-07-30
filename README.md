@@ -100,7 +100,7 @@ type Provider interface {
     HandleChatCompleteRequest(ctx context.Context, r *model.OpenAIChatCompletionRequest) (*request.Response, error)
     HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error
     HandleListModelRequest(ctx context.Context) (*request.Response, error)
-    HandleListModelResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error
+    HandleListModelResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) (*model.OpenAIModelListResponse,error)
 }
 ```
 3. 在`config.json`中添加相应的配置项

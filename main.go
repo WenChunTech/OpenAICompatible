@@ -8,7 +8,6 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/WenChunTech/OpenAICompatible/src/config"
-	"github.com/WenChunTech/OpenAICompatible/src/handler"
 	"github.com/WenChunTech/OpenAICompatible/src/manager"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/codegeex"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/qwen"
@@ -20,11 +19,10 @@ func main() {
 	manager.RegisterHandler(context, "codegeex", codegeex.Provider)
 	manager.RegisterHandler(context, "qwen", qwen.Provider)
 
-	http.HandleFunc("/", handler.NotFoundHandler)
-
 	// handler := handler.CodeGeexHandler
 	// handler := handler.QwenHandler
 
+	http.HandleFunc("/", http.NotFound)
 	http.HandleFunc("/v1/models", manager.HandleListModel)
 	http.HandleFunc("/v1/chat/completions", manager.HandleChatComplete)
 

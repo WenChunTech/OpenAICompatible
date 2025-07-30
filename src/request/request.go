@@ -32,14 +32,14 @@ func NewRequestBuilder(url, method string) *RequestBuilder {
 	}
 }
 
-func (r *RequestBuilder) AddQuery(key, value string) *RequestBuilder {
+func (r *RequestBuilder) WithQuery(key, value string) *RequestBuilder {
 	query := r.URL.Query()
 	query.Add(key, value)
 	r.URL.RawQuery = query.Encode()
 	return r
 }
 
-func (r *RequestBuilder) AddQueries(queries map[string]string) *RequestBuilder {
+func (r *RequestBuilder) WithQueries(queries map[string]string) *RequestBuilder {
 	query := r.URL.Query()
 	for key, value := range queries {
 		query.Add(key, value)
@@ -48,33 +48,38 @@ func (r *RequestBuilder) AddQueries(queries map[string]string) *RequestBuilder {
 	return r
 }
 
-func (r *RequestBuilder) AddHeader(key, value string) *RequestBuilder {
-	r.Header.Add(key, value)
+func (r *RequestBuilder) WithHeader(h http.Header) *RequestBuilder {
+	r.Header = h
 	return r
 }
 
-func (r *RequestBuilder) AddHeaders(headers map[string]string) *RequestBuilder {
+func (r *RequestBuilder) WithHeaders(headers map[string]string) *RequestBuilder {
 	for key, value := range headers {
 		r.Header.Add(key, value)
 	}
 	return r
 }
 
-func (r *RequestBuilder) SetForm(body map[string][]string) *RequestBuilder {
+func (r *RequestBuilder) WithForm(body map[string][]string) *RequestBuilder {
 	r.Header.Set(constant.ContentType, constant.ContentTypeForm)
 	r.Body = io.NopCloser(bytes.NewBufferString(url.Values(body).Encode()))
 	return r
 }
 
-func (r *RequestBuilder) SetJson(body io.Reader) *RequestBuilder {
+func (r *RequestBuilder) WithJson(body io.Reader) *RequestBuilder {
 	r.Header.Set(constant.ContentType, constant.ContentTypeJson)
 	r.Body = io.NopCloser(body)
 	return r
 }
 
-func (r *RequestBuilder) SetFormData(payload io.Reader) *RequestBuilder {
+func (r *RequestBuilder) WithFormData(payload io.Reader) *RequestBuilder {
 	r.Header.Set(constant.ContentType, constant.ContentTypeFormData)
 	r.Body = io.NopCloser(payload)
+	return r
+}
+
+func (r *RequestBuilder) WithBody(body io.ReadCloser) *RequestBuilder {
+	r.Body = body
 	return r
 }
 

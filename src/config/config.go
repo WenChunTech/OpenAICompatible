@@ -22,16 +22,16 @@ type AppConfig struct {
 }
 
 type CodeGeexConfig struct {
-	UserID        string `json:"user_id,omitempty"`        // 用户ID
-	UserRole      int    `json:"user_role,omitempty"`      // 用户角色
-	IDE           string `json:"ide,omitempty"`            // IDE类型
-	IDEVersion    string `json:"ide_version,omitempty"`    // IDE版本
-	PluginVersion string `json:"plugin_version,omitempty"` // 插件版本
-	MachineID     string `json:"machine_id,omitempty"`     // 机器ID
-	TalkID        string `json:"talk_id,omitempty"`        // 对话ID
-	Locale        string `json:"locale,omitempty"`         // 语言
-	Token         string `json:"token"`                    // 访问令牌
-	Prefix        string `json:"prefix,omitempty"`         // 命令前缀
+	UserID        string `json:"user_id,omitempty"`
+	UserRole      int    `json:"user_role,omitempty"`
+	IDE           string `json:"ide,omitempty"`
+	IDEVersion    string `json:"ide_version,omitempty"`
+	PluginVersion string `json:"plugin_version,omitempty"`
+	MachineID     string `json:"machine_id,omitempty"`
+	TalkID        string `json:"talk_id,omitempty"`
+	Locale        string `json:"locale,omitempty"`
+	Token         string `json:"token"`
+	Prefix        string `json:"prefix,omitempty"`
 }
 
 type QwenConfig struct {
