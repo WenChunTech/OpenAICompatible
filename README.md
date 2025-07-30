@@ -27,6 +27,13 @@ graph LR
 
 从[releases](https://github.com/WenChunTech/OpenAICompatible/releases)页面下载适合你系统的预编译二进制文件。
 
+### 使用Docker
+
+```bash
+docker pull ghcr.io/wenchuntech/openaicompatible:latest
+docker run -d -v config.json:/app/config.json -p 8080:8080 openaicompatible:latest
+```
+
 ### 从源码构建
 
 需求：
