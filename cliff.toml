@@ -53,8 +53,17 @@ body = """
         {% endif -%}
     {% endfor -%}
 {% endfor -%}
-
-
+{%- if github -%}
+{% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+  ## New Contributors ❤️
+{% endif %}\
+{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+  * @{{ contributor.username }} made their first contribution
+    {%- if contributor.pr_number %} in \
+      [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
+    {%- endif %}
+{%- endfor -%}
+{%- endif %}
 """
 # template for the changelog footer
 footer = """
@@ -108,7 +117,7 @@ protect_breaking_commits = false
 # filter out the commits that are not matched by commit parsers
 filter_commits = false
 # regex for matching git tags
-tag_pattern = "v[0-9].*"
+tag_pattern = "v[0-9].*|[0-9].*"
 # regex for skipping tags
 skip_tags = "beta|alpha"
 # regex for ignoring tags
