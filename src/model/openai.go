@@ -18,26 +18,73 @@ type Logprobs struct {
 	TokenLogprobs []int    `json:"token_logprobs"`
 }
 
-type StreamOption struct {
-	IncludeUsage bool `json:"include_usage"`
+// type StreamOption struct {
+// 	IncludeUsage bool `json:"include_usage"`
+// }
+
+type StructureContent struct {
+	Type     string    `json:"type"`
+	Text     string    `json:"text,omitempty"`
+	ImageUrl *ImageUrl `json:"image_url,omitempty"`
+}
+
+type ImageUrl struct {
+	Url string `json:"url"`
 }
 
 // OpenAIChatMessage represents a single message in a chat completion request or response.
 type OpenAIChatMessage struct {
-	Role         string     `json:"role"`
-	Content      string     `json:"content"`
-	ToolCalls    []ToolCall `json:"tool_calls,omitempty"`
-	FunctionCall Function   `json:"function_call,omitempty"`
-	Logprobs     Logprobs   `json:"logprobs,omitempty"`
+	Role    string             `json:"role"`
+	Content []StructureContent `json:"content"`
+}
+
+// "tools": [
+//
+//	  {
+//	    "type": "function",
+//	    "function": {
+//	      "name": "get_current_weather",
+//	      "description": "Get the current weather in a given location",
+//	      "parameters": {
+//	        "type": "object",
+//	        "properties": {
+//	          "location": {
+//	            "type": "string",
+//	            "description": "The city and state, e.g. San Francisco, CA"
+//	          },
+//	          "unit": {
+//	            "type": "string",
+//	            "enum": ["celsius", "fahrenheit"]
+//	          }
+//	        },
+//	        "required": ["location"]
+//	      }
+//	    }
+//	  }
+//	],
+//	"tool_choice": "auto"
+type Tool struct {
+	Type     string          `json:"type"`
+	Function RequestFunction `json:"function"`
+}
+
+type RequestFunction struct {
+	Name        string                            `json:"name"`
+	Description string                            `json:"description"`
+	Parameters  map[string]map[string]interface{} `json:"parameters"`
+	Required    []string                          `json:"required"`
 }
 
 // OpenAIChatCompletionRequest represents the request body sent to the chat completion proxy.
 type OpenAIChatCompletionRequest struct {
-	Model         string              `json:"model"`
-	Temperature   float32             `json:"temperature"`
-	Messages      []OpenAIChatMessage `json:"messages,omitempty"`
-	Stream        bool                `json:"stream"`
-	StreamOptions StreamOption        `json:"stream_options,omitempty"`
+	Model       string              `json:"model"`
+	Messages    []OpenAIChatMessage `json:"messages,omitempty"`
+	MaxTokens   int                 `json:"max_tokens"`
+	Stream      bool                `json:"stream"`
+	Tools       []Tool              `json:"tools,omitempty"`
+	ToolChoice  string              `json:"tool_choice,omitempty"`
+	Logprobs    bool                `json:"logprobs"`
+	TopLogprobs int                 `json:"top_logprobs"`
 }
 
 type Choice struct {

@@ -1,0 +1,83 @@
+package gemini
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"log/slog"
+	"net/http"
+	"time"
+
+	"github.com/WenChunTech/OpenAICompatible/src/constant"
+	"github.com/WenChunTech/OpenAICompatible/src/model"
+	"github.com/WenChunTech/OpenAICompatible/src/provider"
+	"github.com/WenChunTech/OpenAICompatible/src/request"
+	"github.com/WenChunTech/OpenAICompatible/src/responser"
+)
+
+var Provider *GeminiProvider
+
+type GeminiProvider struct {
+	*provider.BaseProvider
+	ProjectID string
+	Token     string
+}
+
+func NewGeminiProvider(token, projectID string) *GeminiProvider {
+	return &GeminiProvider{
+		// BaseProvider: provider.BaseProvider(),
+		ProjectID: projectID,
+		Token:     token,
+	}
+}
+
+func (p *GeminiProvider) HandleChatCompleteRequest(ctx context.Context, r *model.OpenAIChatCompletionRequest) (*request.Response, error) {
+	req := model.QwenChatIDRequest{
+		ChatMode:  "normal",
+		ChatType:  "search",
+		Timestamp: time.Now().Unix(),
+	}
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		slog.Error("Failed to marshal chatid request body", "error", err)
+	}
+	resp, err := request.NewRequestBuilder(constant.QwenChatID, http.MethodPost).WithHeaders(p.Headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
+	if err != nil {
+		slog.Error("Failed to send request", "error", err)
+	}
+	var chatIDResp model.QwenChatIDResponse
+	err = resp.Json(&chatIDResp)
+	if err != nil {
+		slog.Error("Failed to decode response body", "error", err)
+	}
+	resp.Body.Close()
+
+	chatCompleteReq := new(model.QwenChatCompleteRequest)
+	ctx = context.WithValue(ctx, constant.ChatIDKey, chatIDResp.Data.ID)
+	if err := chatCompleteReq.ImportOpenAIChatCompletionRequest(ctx, r); err != nil {
+		slog.Error("Failed to import openai chat completion request", "error", err)
+		return nil, err
+	}
+
+	reqBody, err = json.Marshal(chatCompleteReq)
+	if err != nil {
+		slog.Error("Failed to marshal chatcomplete request body", "error", err)
+	}
+	return request.NewRequestBuilder(constant.QwenChatCompleteURL, http.MethodPost).WithQuery(string(constant.ChatIDKey), chatIDResp.Data.ID).WithHeaders(p.Headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
+}
+
+func (p *GeminiProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
+	handler := responser.EventStreamHandler[*model.GeminiChatCompletionResponse]{}
+	return handler.Handle(ctx, w, r)
+}
+
+// HandleListModelRequest 函数用于处理列表模型请求
+func (p *GeminiProvider) HandleListModelRequest(ctx context.Context) (*request.Response, error) {
+	// 创建一个新的请求构建器，传入模型URL和模型方法
+	return request.NewRequestBuilder(p.ModelURL, p.ModelMethod).WithHeaders(p.Headers).Do(ctx, nil)
+}
+
+func (p *GeminiProvider) HandleListModelResponse(ctx context.Context, r *request.Response) (*model.OpenAIModelListResponse, error) {
+	handler := responser.ModelListHandler[*model.QwenListModelResponse]{}
+	return handler.Handle(ctx, r)
+}

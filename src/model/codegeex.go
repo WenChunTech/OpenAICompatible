@@ -76,14 +76,14 @@ func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Cont
 	return nil
 }
 
-type CodeGeexEventSourceData struct {
+type CodeGeexChatCompleteResponse struct {
 	ID           string `json:"id"`
 	Text         string `json:"text"`
 	FinishReason string `json:"finish_reason"`
 	Model        string `json:"model"`
 }
 
-func (c CodeGeexEventSourceData) Convert(ctx context.Context) (*OpenAPIChatCompletionStreamResponse, error) {
+func (c CodeGeexChatCompleteResponse) Convert(ctx context.Context) (*OpenAPIChatCompletionStreamResponse, error) {
 	choice := OpenAIStreamChoice{
 		Index: 0,
 		Delta: Delta{
@@ -125,14 +125,14 @@ type Promote struct {
 	} `json:"text"`
 }
 
-type CodeGeexModelOptions struct {
+type CodeGeexModelListResponse struct {
 	Options []Option `json:"options"`
 	Default string   `json:"default"`
 	Promote *Promote `json:"promote"`
 	IP      string   `json:"ip"`
 }
 
-func (c *CodeGeexModelOptions) Convert(ctx context.Context) (*OpenAIModelListResponse, error) {
+func (c *CodeGeexModelListResponse) Convert(ctx context.Context) (*OpenAIModelListResponse, error) {
 	models := make([]*Model, len(c.Options))
 	for i, option := range c.Options {
 		models[i] = &Model{

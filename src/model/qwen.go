@@ -120,7 +120,7 @@ func (q *QwenChatCompleteRequest) ImportOpenAIChatCompletionRequest(ctx context.
 	for _, message := range req.Messages {
 		messages = append(messages, Messages{
 			Role:     message.Role,
-			Content:  message.Content,
+			Content:  message.Content[0].Text,
 			Models:   []string{req.Model},
 			ChatType: "search",
 			FeatureConfig: FeatureConfig{

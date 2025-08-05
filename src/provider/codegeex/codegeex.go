@@ -60,7 +60,7 @@ func (p *CodeGeexProvider) HandleChatCompleteRequest(ctx context.Context, r *mod
 }
 
 func (p *CodeGeexProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
-	handler := responser.EventStreamHandler[model.CodeGeexEventSourceData]{}
+	handler := responser.EventStreamHandler[model.CodeGeexChatCompleteResponse]{}
 	return handler.Handle(ctx, w, r)
 }
 
@@ -69,6 +69,6 @@ func (p *CodeGeexProvider) HandleListModelRequest(ctx context.Context) (*request
 }
 
 func (p *CodeGeexProvider) HandleListModelResponse(ctx context.Context, r *request.Response) (*model.OpenAIModelListResponse, error) {
-	handler := responser.ModelListHandler[*model.CodeGeexModelOptions]{}
+	handler := responser.ModelListHandler[*model.CodeGeexModelListResponse]{}
 	return handler.Handle(ctx, r)
 }
