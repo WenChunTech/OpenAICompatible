@@ -66,3 +66,13 @@ const (
 	QwenChatID          = "https://chat.qwen.ai/api/v2/chats/new"
 	QwenModelListURL    = "https://chat.qwen.ai/api/models"
 )
+
+const (
+	GeminiCliPrefix           = "gemini_cli"
+	GeminiCliHost             = "cloudcode-pa.googleapis.com"
+	GeminiCliChatCompletePath = "/v1internal:streamGenerateContent"
+	GeminiCliModelListPath    = ""
+
+	GeminiCliChatCompleteURL = "https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse"
+	GeminiCliModelListURL    = ""
+)

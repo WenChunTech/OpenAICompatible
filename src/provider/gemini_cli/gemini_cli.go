@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/model"
@@ -24,46 +24,28 @@ type GeminiProvider struct {
 }
 
 func NewGeminiProvider(token, projectID string) *GeminiProvider {
+	headers := map[string]string{
+		constant.Authorization: fmt.Sprintf("Bearer %s", token),
+	}
 	return &GeminiProvider{
-		// BaseProvider: provider.BaseProvider(),
+		BaseProvider: &provider.BaseProvider{
+			ChatCompleteURL:    constant.GeminiCliChatCompleteURL,
+			ChatCompleteMethod: http.MethodPost,
+			ModelURL:           constant.GeminiCliModelListURL,
+			ModelMethod:        http.MethodGet,
+			Headers:            headers,
+		},
 		ProjectID: projectID,
-		Token:     token,
 	}
 }
 
 func (p *GeminiProvider) HandleChatCompleteRequest(ctx context.Context, r *model.OpenAIChatCompletionRequest) (*request.Response, error) {
-	req := model.QwenChatIDRequest{
-		ChatMode:  "normal",
-		ChatType:  "search",
-		Timestamp: time.Now().Unix(),
-	}
-	reqBody, err := json.Marshal(req)
+	reqBody, err := json.Marshal(r)
 	if err != nil {
-		slog.Error("Failed to marshal chatid request body", "error", err)
-	}
-	resp, err := request.NewRequestBuilder(constant.QwenChatID, http.MethodPost).WithHeaders(p.Headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
-	if err != nil {
-		slog.Error("Failed to send request", "error", err)
-	}
-	var chatIDResp model.QwenChatIDResponse
-	err = resp.Json(&chatIDResp)
-	if err != nil {
-		slog.Error("Failed to decode response body", "error", err)
-	}
-	resp.Body.Close()
-
-	chatCompleteReq := new(model.QwenChatCompleteRequest)
-	ctx = context.WithValue(ctx, constant.ChatIDKey, chatIDResp.Data.ID)
-	if err := chatCompleteReq.ImportOpenAIChatCompletionRequest(ctx, r); err != nil {
-		slog.Error("Failed to import openai chat completion request", "error", err)
+		slog.Error("marshal request body failed", "err", err)
 		return nil, err
 	}
-
-	reqBody, err = json.Marshal(chatCompleteReq)
-	if err != nil {
-		slog.Error("Failed to marshal chatcomplete request body", "error", err)
-	}
-	return request.NewRequestBuilder(constant.QwenChatCompleteURL, http.MethodPost).WithQuery(string(constant.ChatIDKey), chatIDResp.Data.ID).WithHeaders(p.Headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
+	return request.NewRequestBuilder(constant.GeminiCliChatCompleteURL, p.ChatCompleteMethod).WithHeaders(p.Headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
 }
 
 func (p *GeminiProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
