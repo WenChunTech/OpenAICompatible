@@ -10,7 +10,7 @@ import (
 
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/converter"
-	"github.com/WenChunTech/OpenAICompatible/src/model"
+	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 	"github.com/WenChunTech/OpenAICompatible/src/parser"
 	"github.com/WenChunTech/OpenAICompatible/src/request"
 )
@@ -79,7 +79,7 @@ func (h *EventStreamHandler[C]) Handle(ctx context.Context, w http.ResponseWrite
 type ModelListHandler[C converter.ModelConverter] struct {
 }
 
-func (h *ModelListHandler[C]) Handle(ctx context.Context, r *request.Response) (*model.OpenAIModelListResponse, error) {
+func (h *ModelListHandler[C]) Handle(ctx context.Context, r *request.Response) (*openai.OpenAIModelListResponse, error) {
 	defer r.Body.Close()
 	var providerModel C
 	if err := r.Json(&providerModel); err != nil {

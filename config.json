@@ -8,5 +8,16 @@
     "qwen": {
         "prefix": "qwen",
         "token": ""
+    },
+    "gemini_cli": {
+        "prefix": "gemini_cli",
+        "project_id": "",
+        "token": {
+            "access_token": "",
+            "token_type": "",
+            "refresh_token": "",
+            "expiry": "",
+            "expires_in": 0
+        }
     }
 }

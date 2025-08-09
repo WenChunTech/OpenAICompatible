@@ -2,20 +2,20 @@ package handler
 
 import (
 	"github.com/WenChunTech/OpenAICompatible/src/config"
-	"github.com/WenChunTech/OpenAICompatible/src/provider/codegeex"
-	gemini "github.com/WenChunTech/OpenAICompatible/src/provider/gemini_cli"
+	gemini "github.com/WenChunTech/OpenAICompatible/src/provider/geminicli"
+	"golang.org/x/oauth2"
 )
 
-var GeminiCliHandler *Handler[*gemini.GeminiProvider]
+var GeminiCliHandler *Handler[*gemini.GeminiCliProvider]
 
 func init() {
-	codegeexProvider := codegeex.NewCodeGeexProvider(config.Config.CodeGeex.Token)
-	CodeGeexHandler = &Handler[*codegeex.CodeGeexProvider]{}
-	CodeGeexHandler.P = codegeexProvider
+	geminiProvider := gemini.NewGeminiCliProvider(config.Config.GeminiCli.ProjectID, config.Config.GeminiCli.Token)
+	GeminiCliHandler = &Handler[*gemini.GeminiCliProvider]{}
+	GeminiCliHandler.P = geminiProvider
 }
 
-func NewGeminiCliHandler(token string, projectID string) *Handler[*gemini.GeminiProvider] {
-	geminiHandler := &Handler[*gemini.GeminiProvider]{}
-	geminiHandler.P = gemini.NewGeminiProvider(token, projectID)
-	return geminiHandler
+func NewGeminiCliHandler(projectID string, token *oauth2.Token) *Handler[*gemini.GeminiCliProvider] {
+	geminicliHandler := &Handler[*gemini.GeminiCliProvider]{}
+	geminicliHandler.P = gemini.NewGeminiCliProvider(projectID, token)
+	return geminicliHandler
 }

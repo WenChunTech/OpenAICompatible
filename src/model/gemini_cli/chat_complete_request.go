@@ -6,11 +6,12 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 	"github.com/WenChunTech/OpenAICompatible/src/translator"
 )
 
-func (c *GeminiCliChatCompletionRequest) ImportOpenAIChatCompletionRequest(ctx context.Context, req *openai.ChatCompletionRequest) error {
+func (c *GeminiCliChatCompletionRequest) ImportOpenAIChatCompletionRequest(ctx context.Context, req *openai.OpenAIChatCompletionRequest) error {
 	var systemInstruction *Content
 	contents := []Content{}
 	toolItems := make(map[string]*FunctionResponse)
@@ -142,7 +143,7 @@ func (c *GeminiCliChatCompletionRequest) ImportOpenAIChatCompletionRequest(ctx c
 	}
 
 	projectID := ""
-	if pID := ctx.Value("project_id"); pID != nil {
+	if pID := ctx.Value(constant.ProjectIDKey); pID != nil {
 		projectID = pID.(string)
 	}
 

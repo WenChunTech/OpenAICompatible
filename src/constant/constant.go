@@ -37,7 +37,8 @@ const (
 type ContextKey string
 
 const (
-	ChatIDKey ContextKey = "chat_id"
+	ChatIDKey    ContextKey = "chat_id"
+	ProjectIDKey ContextKey = "project_id"
 )
 
 const (

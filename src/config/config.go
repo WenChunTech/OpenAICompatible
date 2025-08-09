@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -15,10 +16,17 @@ const (
 )
 
 type AppConfig struct {
-	Host     string          `json:"host,omitempty"`
-	Port     int             `json:"port"`
-	CodeGeex *CodeGeexConfig `json:"codegeex,omitempty"`
-	Qwen     *QwenConfig     `json:"qwen,omitempty"`
+	Host      string           `json:"host,omitempty"`
+	Port      int              `json:"port"`
+	CodeGeex  *CodeGeexConfig  `json:"codegeex,omitempty"`
+	Qwen      *QwenConfig      `json:"qwen,omitempty"`
+	GeminiCli *GeminiCliConfig `json:"gemini_cli,omitempty"`
+}
+
+type GeminiCliConfig struct {
+	Prefix    string        `json:"prefix,omitempty"`
+	ProjectID string        `json:"project_id,omitempty"`
+	Token     *oauth2.Token `json:"token,omitempty"`
 }
 
 type CodeGeexConfig struct {
@@ -70,5 +78,8 @@ func init() {
 	}
 	if Config.Qwen != nil && len(Config.Qwen.Prefix) != 0 {
 		Config.Qwen.Prefix = constant.QwenPrefix
+	}
+	if Config.GeminiCli != nil && len(Config.GeminiCli.Prefix) != 0 {
+		Config.GeminiCli.Prefix = constant.GeminiCliPrefix
 	}
 }

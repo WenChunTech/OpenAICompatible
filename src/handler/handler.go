@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
-	"github.com/WenChunTech/OpenAICompatible/src/model"
+	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 	"github.com/WenChunTech/OpenAICompatible/src/provider"
 )
 
@@ -16,12 +16,12 @@ type Handler[P provider.Provider] struct {
 	P P
 }
 
-func (p *Handler[P]) validateRequest(r *http.Request) (*model.OpenAIChatCompletionRequest, error) {
+func (p *Handler[P]) validateRequest(r *http.Request) (*openai.OpenAIChatCompletionRequest, error) {
 	if r.Method != http.MethodPost {
 		return nil, errors.New("method not allowed")
 	}
 
-	var reqBody model.OpenAIChatCompletionRequest
+	var reqBody openai.OpenAIChatCompletionRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		slog.Error("Failed to decode request body", "error", err)
 		return nil, fmt.Errorf("failed to decode request body: %w", err)

@@ -9,9 +9,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/WenChunTech/OpenAICompatible/src/model"
+	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 	"github.com/WenChunTech/OpenAICompatible/src/provider"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/codegeex"
+	gemini "github.com/WenChunTech/OpenAICompatible/src/provider/geminicli"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/qwen"
 )
 
@@ -19,7 +20,7 @@ const Object = "model"
 
 type ProviderManager struct {
 	PrefixMap map[string]provider.Provider
-	ModelList *model.OpenAIModelListResponse
+	ModelList *openai.OpenAIModelListResponse
 }
 
 func InitProviderManager() *ProviderManager {
@@ -33,13 +34,17 @@ func InitProviderManager() *ProviderManager {
 	if err != nil {
 		slog.Error("Failed to register qwen provider", "error", err)
 	}
+	err = manager.RegisterProvider(context, "gemini_cli", gemini.Provider)
+	if err != nil {
+		slog.Error("Failed to register gemini_cli provider", "error", err)
+	}
 	return manager
 }
 
 func NewProviderManager() *ProviderManager {
 	return &ProviderManager{
 		PrefixMap: make(map[string]provider.Provider),
-		ModelList: &model.OpenAIModelListResponse{
+		ModelList: &openai.OpenAIModelListResponse{
 			Object: Object,
 		},
 	}
@@ -67,12 +72,12 @@ func (m *ProviderManager) RegisterProvider(ctx context.Context, prefix string, p
 	return nil
 }
 
-func (m *ProviderManager) validateRequest(r *http.Request) (*model.OpenAIChatCompletionRequest, error) {
+func (m *ProviderManager) validateRequest(r *http.Request) (*openai.OpenAIChatCompletionRequest, error) {
 	if r.Method != http.MethodPost {
 		return nil, errors.New("method not allowed")
 	}
 
-	var reqBody model.OpenAIChatCompletionRequest
+	var reqBody openai.OpenAIChatCompletionRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		slog.Error("Failed to decode request body", "error", err)
 		return nil, fmt.Errorf("failed to decode request body: %w", err)

@@ -11,7 +11,8 @@ import (
 
 	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
-	"github.com/WenChunTech/OpenAICompatible/src/model"
+	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
+	"github.com/WenChunTech/OpenAICompatible/src/model/qwen"
 	"github.com/WenChunTech/OpenAICompatible/src/provider"
 	"github.com/WenChunTech/OpenAICompatible/src/request"
 	"github.com/WenChunTech/OpenAICompatible/src/responser"
@@ -46,8 +47,8 @@ func NewQwenProvider(token string) *QwenProvider {
 	}
 }
 
-func (p *QwenProvider) HandleChatCompleteRequest(ctx context.Context, r *model.OpenAIChatCompletionRequest) (*request.Response, error) {
-	req := model.QwenChatIDRequest{
+func (p *QwenProvider) HandleChatCompleteRequest(ctx context.Context, r *openai.OpenAIChatCompletionRequest) (*request.Response, error) {
+	req := qwen.QwenChatIDRequest{
 		ChatMode:  "normal",
 		ChatType:  "search",
 		Timestamp: time.Now().Unix(),
@@ -60,14 +61,14 @@ func (p *QwenProvider) HandleChatCompleteRequest(ctx context.Context, r *model.O
 	if err != nil {
 		slog.Error("Failed to send request", "error", err)
 	}
-	var chatIDResp model.QwenChatIDResponse
+	var chatIDResp qwen.QwenChatIDResponse
 	err = resp.Json(&chatIDResp)
 	if err != nil {
 		slog.Error("Failed to decode response body", "error", err)
 	}
 	resp.Body.Close()
 
-	chatCompleteReq := new(model.QwenChatCompleteRequest)
+	chatCompleteReq := new(qwen.QwenChatCompleteRequest)
 	ctx = context.WithValue(ctx, constant.ChatIDKey, chatIDResp.Data.ID)
 	if err := chatCompleteReq.ImportOpenAIChatCompletionRequest(ctx, r); err != nil {
 		slog.Error("Failed to import openai chat completion request", "error", err)
@@ -82,7 +83,7 @@ func (p *QwenProvider) HandleChatCompleteRequest(ctx context.Context, r *model.O
 }
 
 func (p *QwenProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
-	handler := responser.EventStreamHandler[model.QwenChatCompleteResponse]{}
+	handler := responser.EventStreamHandler[qwen.QwenChatCompleteResponse]{}
 	return handler.Handle(ctx, w, r)
 }
 
@@ -92,7 +93,7 @@ func (p *QwenProvider) HandleListModelRequest(ctx context.Context) (*request.Res
 	return request.NewRequestBuilder(p.ModelURL, p.ModelMethod).WithHeaders(p.Headers).Do(ctx, nil)
 }
 
-func (p *QwenProvider) HandleListModelResponse(ctx context.Context, r *request.Response) (*model.OpenAIModelListResponse, error) {
-	handler := responser.ModelListHandler[*model.QwenListModelResponse]{}
+func (p *QwenProvider) HandleListModelResponse(ctx context.Context, r *request.Response) (*openai.OpenAIModelListResponse, error) {
+	handler := responser.ModelListHandler[*qwen.QwenModelListResponse]{}
 	return handler.Handle(ctx, r)
 }

@@ -3,7 +3,7 @@ package importer
 import (
 	"context"
 
-	"github.com/WenChunTech/OpenAICompatible/src/model"
+	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 )
 
 type Importer[T any] interface {
@@ -12,5 +12,5 @@ type Importer[T any] interface {
 
 // OpenAIChatCompletionImporter is an interface for importing OpenAI chat completion requests.
 type OpenAIChatCompletionImporter interface {
-	ImportOpenAIChatCompletionRequest(ctx context.Context, req *model.OpenAIChatCompletionRequest) error
+	ImportOpenAIChatCompletionRequest(ctx context.Context, req *openai.OpenAIChatCompletionRequest) error
 }

@@ -1,14 +1,13 @@
-package model
+package codegeex
 
 import (
 	"context"
 	"encoding/json"
 	"log/slog"
 	"strings"
-	"time"
 
 	"github.com/WenChunTech/OpenAICompatible/src/config"
-	"github.com/WenChunTech/OpenAICompatible/src/constant"
+	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 	"github.com/WenChunTech/OpenAICompatible/src/util"
 )
 
@@ -40,7 +39,7 @@ type CodeGeexChatRequest struct {
 	History       []History  `json:"history"`
 }
 
-func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Context, req *OpenAIChatCompletionRequest) error {
+func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Context, req *openai.OpenAIChatCompletionRequest) error {
 	var promptBuilder strings.Builder
 	for _, message := range req.Messages {
 		messageContent, err := json.Marshal(message)
@@ -74,76 +73,4 @@ func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Cont
 		Model:         req.Model,
 	}
 	return nil
-}
-
-type CodeGeexChatCompleteResponse struct {
-	ID           string `json:"id"`
-	Text         string `json:"text"`
-	FinishReason string `json:"finish_reason"`
-	Model        string `json:"model"`
-}
-
-func (c CodeGeexChatCompleteResponse) Convert(ctx context.Context) (*OpenAPIChatCompletionStreamResponse, error) {
-	choice := OpenAIStreamChoice{
-		Index: 0,
-		Delta: Delta{
-			Content: c.Text,
-			Role:    constant.AssistantRole,
-		},
-	}
-	if c.FinishReason != "" {
-		finishReason := c.FinishReason
-		choice.FinishReason = &finishReason
-	}
-	return &OpenAPIChatCompletionStreamResponse{
-		ID:      c.ID,
-		Object:  "chat.completion.chunk",
-		Created: time.Now().Unix(),
-		Model:   c.Model,
-		Choices: []OpenAIStreamChoice{choice},
-		Usage:   nil,
-	}, nil
-}
-
-type Option struct {
-	ID          string       `json:"id"`
-	Name        string       `json:"name"`
-	Description *Description `json:"description"`
-	Host        string       `json:"host"`
-}
-
-type Description struct {
-	Zh string `json:"zh"`
-	En string `json:"en"`
-}
-
-type Promote struct {
-	Key  string `json:"key"`
-	Text struct {
-		Zh string `json:"zh"`
-		En string `json:"en"`
-	} `json:"text"`
-}
-
-type CodeGeexModelListResponse struct {
-	Options []Option `json:"options"`
-	Default string   `json:"default"`
-	Promote *Promote `json:"promote"`
-	IP      string   `json:"ip"`
-}
-
-func (c *CodeGeexModelListResponse) Convert(ctx context.Context) (*OpenAIModelListResponse, error) {
-	models := make([]*Model, len(c.Options))
-	for i, option := range c.Options {
-		models[i] = &Model{
-			ID:      option.ID,
-			Object:  "model",
-			Created: time.Now().Unix(),
-			OwnedBy: "codegeex",
-		}
-	}
-	return &OpenAIModelListResponse{
-		Object: "list",
-		Data:   models,
-	}, nil
 }

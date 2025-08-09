@@ -3,7 +3,7 @@ package converter
 import (
 	"context"
 
-	"github.com/WenChunTech/OpenAICompatible/src/model"
+	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 )
 
 type Converter[T any] interface {
@@ -12,10 +12,10 @@ type Converter[T any] interface {
 
 // ChatCompletionConverter is an interface for converting chat completion responses.
 type ChatCompletionConverter interface {
-	Convert(ctx context.Context) (*model.OpenAPIChatCompletionStreamResponse, error)
+	Convert(ctx context.Context) (*openai.OpenAPIChatCompletionStreamResponse, error)
 }
 
 // ModelConverter is an interface for converting model list responses.
 type ModelConverter interface {
-	Convert(ctx context.Context) (*model.OpenAIModelListResponse, error)
+	Convert(ctx context.Context) (*openai.OpenAIModelListResponse, error)
 }

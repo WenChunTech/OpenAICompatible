@@ -10,7 +10,8 @@ import (
 
 	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
-	"github.com/WenChunTech/OpenAICompatible/src/model"
+	"github.com/WenChunTech/OpenAICompatible/src/model/codegeex"
+	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 	"github.com/WenChunTech/OpenAICompatible/src/provider"
 	"github.com/WenChunTech/OpenAICompatible/src/request"
 	"github.com/WenChunTech/OpenAICompatible/src/responser"
@@ -44,8 +45,8 @@ func NewCodeGeexProvider(token string) *CodeGeexProvider {
 	}
 }
 
-func (p *CodeGeexProvider) HandleChatCompleteRequest(ctx context.Context, r *model.OpenAIChatCompletionRequest) (*request.Response, error) {
-	codegeex := model.CodeGeexChatRequest{}
+func (p *CodeGeexProvider) HandleChatCompleteRequest(ctx context.Context, r *openai.OpenAIChatCompletionRequest) (*request.Response, error) {
+	codegeex := codegeex.CodeGeexChatRequest{}
 	err := codegeex.ImportOpenAIChatCompletionRequest(ctx, r)
 	if err != nil {
 		slog.Error("Failed to import OpenAI chat completion request", "error", err)
@@ -60,7 +61,7 @@ func (p *CodeGeexProvider) HandleChatCompleteRequest(ctx context.Context, r *mod
 }
 
 func (p *CodeGeexProvider) HandleChatCompleteResponse(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
-	handler := responser.EventStreamHandler[model.CodeGeexChatCompleteResponse]{}
+	handler := responser.EventStreamHandler[codegeex.CodeGeexChatCompleteResponse]{}
 	return handler.Handle(ctx, w, r)
 }
 
@@ -68,7 +69,7 @@ func (p *CodeGeexProvider) HandleListModelRequest(ctx context.Context) (*request
 	return request.NewRequestBuilder(p.ModelURL, p.ModelMethod).Do(ctx, nil)
 }
 
-func (p *CodeGeexProvider) HandleListModelResponse(ctx context.Context, r *request.Response) (*model.OpenAIModelListResponse, error) {
-	handler := responser.ModelListHandler[*model.CodeGeexModelListResponse]{}
+func (p *CodeGeexProvider) HandleListModelResponse(ctx context.Context, r *request.Response) (*openai.OpenAIModelListResponse, error) {
+	handler := responser.ModelListHandler[*codegeex.CodeGeexModelListResponse]{}
 	return handler.Handle(ctx, r)
 }

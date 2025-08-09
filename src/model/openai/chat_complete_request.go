@@ -2,9 +2,9 @@ package openai
 
 import "encoding/json"
 
-// ChatCompletionRequest represents the request body for the OpenAI Chat Completions API.
+// OpenAIChatCompletionRequest represents the request body for the OpenAI Chat Completions API.
 // Based on documentation from https://platform.openai.com/docs/api-reference/chat/create
-type ChatCompletionRequest struct {
+type OpenAIChatCompletionRequest struct {
 	Model               string                  `json:"model"`
 	Messages            []ChatCompletionMessage `json:"messages"`
 	Audio               *AudioOutputConfig      `json:"audio,omitempty"` // For audio output requests
