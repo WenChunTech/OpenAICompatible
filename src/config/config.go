@@ -15,12 +15,18 @@ const (
 	APPLocalConfigFile = "config.local.json"
 )
 
+var RollMap = map[string]int{
+	constant.CodeGeexPrefix:  0,
+	constant.QwenPrefix:      0,
+	constant.GeminiCliPrefix: 0,
+}
+
 type AppConfig struct {
-	Host      string           `json:"host,omitempty"`
-	Port      int              `json:"port"`
-	CodeGeex  *CodeGeexConfig  `json:"codegeex,omitempty"`
-	Qwen      *QwenConfig      `json:"qwen,omitempty"`
-	GeminiCli *GeminiCliConfig `json:"gemini_cli,omitempty"`
+	Host      string             `json:"host,omitempty"`
+	Port      int                `json:"port"`
+	CodeGeex  []*CodeGeexConfig  `json:"codegeex,omitempty"`
+	Qwen      []*QwenConfig      `json:"qwen,omitempty"`
+	GeminiCli []*GeminiCliConfig `json:"gemini_cli,omitempty"`
 }
 
 type GeminiCliConfig struct {
@@ -73,13 +79,67 @@ func init() {
 		}
 	}
 
-	if Config.CodeGeex != nil && len(Config.CodeGeex.Prefix) != 0 {
-		Config.CodeGeex.Prefix = constant.CodeGeexPrefix
+	if len(Config.CodeGeex) != 0 && len(Config.CodeGeex[0].Prefix) != 0 {
+		Config.CodeGeex[0].Prefix = constant.CodeGeexPrefix
 	}
-	if Config.Qwen != nil && len(Config.Qwen.Prefix) != 0 {
-		Config.Qwen.Prefix = constant.QwenPrefix
+	if len(Config.Qwen) != 0 && len(Config.Qwen[0].Prefix) != 0 {
+		Config.Qwen[0].Prefix = constant.QwenPrefix
 	}
-	if Config.GeminiCli != nil && len(Config.GeminiCli.Prefix) != 0 {
-		Config.GeminiCli.Prefix = constant.GeminiCliPrefix
+	if Config.GeminiCli != nil && len(Config.GeminiCli[0].Prefix) != 0 {
+		Config.GeminiCli[0].Prefix = constant.GeminiCliPrefix
 	}
+}
+
+func GetCodeGeexConfig() *CodeGeexConfig {
+	if len(Config.CodeGeex) == 0 {
+		return nil
+	}
+
+	return Config.CodeGeex[RollMap[constant.CodeGeexPrefix]]
+}
+
+func NextCodeGeexConfig() *CodeGeexConfig {
+	config := GetCodeGeexConfig()
+	if config == nil {
+		return nil
+	}
+
+	RollMap[constant.CodeGeexPrefix] = (RollMap[constant.CodeGeexPrefix] + 1) % len(Config.CodeGeex)
+	return config
+}
+
+func GetQwenConfig() *QwenConfig {
+	if len(Config.Qwen) == 0 {
+		return nil
+	}
+
+	return Config.Qwen[RollMap[constant.QwenPrefix]]
+}
+
+func NextQwenConfig() *QwenConfig {
+	config := GetQwenConfig()
+	if config == nil {
+		return nil
+	}
+
+	RollMap[constant.QwenPrefix] = (RollMap[constant.QwenPrefix] + 1) % len(Config.Qwen)
+	return config
+}
+
+func GetGeminiCliConfig() *GeminiCliConfig {
+	if len(Config.GeminiCli) == 0 {
+		return nil
+	}
+
+	return Config.GeminiCli[RollMap[constant.GeminiCliPrefix]]
+}
+
+func NextGeminiCliConfig() *GeminiCliConfig {
+	config := GetGeminiCliConfig()
+	if config == nil {
+		return nil
+	}
+
+	RollMap[constant.GeminiCliPrefix] = (RollMap[constant.GeminiCliPrefix] + 1) % len(Config.GeminiCli)
+	return config
 }

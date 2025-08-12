@@ -29,7 +29,8 @@ type QwenProvider struct {
 }
 
 func init() {
-	Provider = NewQwenProvider(config.Config.Qwen.Token)
+	config := config.GetQwenConfig()
+	Provider = NewQwenProvider(config.Token)
 }
 
 func NewQwenProvider(token string) *QwenProvider {

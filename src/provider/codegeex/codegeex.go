@@ -24,7 +24,8 @@ type CodeGeexProvider struct {
 }
 
 func init() {
-	Provider = NewCodeGeexProvider(config.Config.CodeGeex.Token)
+	config := config.GetCodeGeexConfig()
+	Provider = NewCodeGeexProvider(config.Token)
 }
 
 func NewCodeGeexProvider(token string) *CodeGeexProvider {

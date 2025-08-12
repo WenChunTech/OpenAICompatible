@@ -50,7 +50,8 @@ func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Cont
 		promptBuilder.WriteString(string(messageContent))
 		promptBuilder.WriteString("\n")
 	}
-	talkID := config.Config.CodeGeex.TalkID
+	config := config.GetCodeGeexConfig()
+	talkID := config.TalkID
 	if talkID == "" {
 		id, err := util.GenerateUUID()
 		if err != nil {
@@ -61,15 +62,15 @@ func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Cont
 	}
 
 	*c = CodeGeexChatRequest{
-		UserID:        config.Config.CodeGeex.UserID,
-		UserRole:      config.Config.CodeGeex.UserRole,
-		IDE:           config.Config.CodeGeex.IDE,
-		IDEVersion:    config.Config.CodeGeex.IDEVersion,
-		PluginVersion: config.Config.CodeGeex.PluginVersion,
+		UserID:        config.UserID,
+		UserRole:      config.UserRole,
+		IDE:           config.IDE,
+		IDEVersion:    config.IDEVersion,
+		PluginVersion: config.PluginVersion,
 		Prompt:        promptBuilder.String(),
-		MachineID:     config.Config.CodeGeex.MachineID,
+		MachineID:     config.MachineID,
 		TalkID:        talkID,
-		Locale:        config.Config.CodeGeex.Locale,
+		Locale:        config.Locale,
 		Model:         req.Model,
 	}
 	return nil

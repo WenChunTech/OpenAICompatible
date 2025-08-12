@@ -9,32 +9,49 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/WenChunTech/OpenAICompatible/src/config"
+	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 	"github.com/WenChunTech/OpenAICompatible/src/provider"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/codegeex"
-	gemini "github.com/WenChunTech/OpenAICompatible/src/provider/geminicli"
+	"github.com/WenChunTech/OpenAICompatible/src/provider/geminicli"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/qwen"
 )
 
 const Object = "model"
 
 type ProviderManager struct {
-	PrefixMap map[string]provider.Provider
+	PrefixMap map[string]func() provider.Provider
 	ModelList *openai.OpenAIModelListResponse
+}
+
+func newCodeGeexProvider() provider.Provider {
+	config := config.NextCodeGeexConfig()
+	return codegeex.NewCodeGeexProvider(config.Token)
+}
+
+func newQwenProvider() provider.Provider {
+	config := config.NextQwenConfig()
+	return qwen.NewQwenProvider(config.Token)
+}
+
+func newGeminiCliProvider() provider.Provider {
+	config := config.NextGeminiCliConfig()
+	return geminicli.NewGeminiCliProvider(config.ProjectID, config.Token)
 }
 
 func InitProviderManager() *ProviderManager {
 	context := context.Background()
 	manager := NewProviderManager()
-	err := manager.RegisterProvider(context, "codegeex", codegeex.Provider)
+	err := manager.RegisterProvider(context, constant.CodeGeexPrefix, newCodeGeexProvider)
 	if err != nil {
 		slog.Error("Failed to register codegeex provider", "error", err)
 	}
-	err = manager.RegisterProvider(context, "qwen", qwen.Provider)
+	err = manager.RegisterProvider(context, constant.QwenPrefix, newQwenProvider)
 	if err != nil {
 		slog.Error("Failed to register qwen provider", "error", err)
 	}
-	err = manager.RegisterProvider(context, "gemini_cli", gemini.Provider)
+	err = manager.RegisterProvider(context, constant.GeminiCliPrefix, newGeminiCliProvider)
 	if err != nil {
 		slog.Error("Failed to register gemini_cli provider", "error", err)
 	}
@@ -43,14 +60,15 @@ func InitProviderManager() *ProviderManager {
 
 func NewProviderManager() *ProviderManager {
 	return &ProviderManager{
-		PrefixMap: make(map[string]provider.Provider),
+		PrefixMap: make(map[string]func() provider.Provider),
 		ModelList: &openai.OpenAIModelListResponse{
 			Object: Object,
 		},
 	}
 }
 
-func (m *ProviderManager) RegisterProvider(ctx context.Context, prefix string, provider provider.Provider) error {
+func (m *ProviderManager) RegisterProvider(ctx context.Context, prefix string, providerFunc func() provider.Provider) error {
+	provider := providerFunc()
 	resp, err := provider.HandleListModelRequest(ctx)
 	if err != nil {
 		slog.Error("Failed to handle list model request", "error", err)
@@ -66,7 +84,7 @@ func (m *ProviderManager) RegisterProvider(ctx context.Context, prefix string, p
 	for _, model := range providerModelList.Data {
 		prefixModel := fmt.Sprintf("%s/%s", prefix, model.ID)
 		model.ID = prefixModel
-		m.PrefixMap[prefixModel] = provider
+		m.PrefixMap[prefixModel] = providerFunc
 	}
 	m.ModelList.Data = append(m.ModelList.Data, providerModelList.Data...)
 	return nil
@@ -99,7 +117,8 @@ func (m *ProviderManager) HandleChatComplete(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if provider, ok := m.PrefixMap[reqBody.Model]; ok {
+	if providerFunc, ok := m.PrefixMap[reqBody.Model]; ok {
+		provider := providerFunc()
 		index := strings.Index(reqBody.Model, "/")
 		reqBody.Model = reqBody.Model[index+1:]
 		resp, err := provider.HandleChatCompleteRequest(ctx, reqBody)

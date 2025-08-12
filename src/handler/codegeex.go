@@ -8,7 +8,8 @@ import (
 var CodeGeexHandler *Handler[*codegeex.CodeGeexProvider]
 
 func init() {
-	codegeexProvider := codegeex.NewCodeGeexProvider(config.Config.CodeGeex.Token)
+	config := config.GetCodeGeexConfig()
+	codegeexProvider := codegeex.NewCodeGeexProvider(config.Token)
 	CodeGeexHandler = &Handler[*codegeex.CodeGeexProvider]{}
 	CodeGeexHandler.P = codegeexProvider
 }

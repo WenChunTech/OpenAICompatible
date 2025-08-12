@@ -27,7 +27,8 @@ type GeminiCliProvider struct {
 }
 
 func init() {
-	Provider = NewGeminiCliProvider(config.Config.GeminiCli.ProjectID, config.Config.GeminiCli.Token)
+	config := config.GetGeminiCliConfig()
+	Provider = NewGeminiCliProvider(config.ProjectID, config.Token)
 }
 
 func NewGeminiCliProvider(projectID string, token *oauth2.Token) *GeminiCliProvider {

@@ -9,7 +9,8 @@ import (
 var GeminiCliHandler *Handler[*gemini.GeminiCliProvider]
 
 func init() {
-	geminiProvider := gemini.NewGeminiCliProvider(config.Config.GeminiCli.ProjectID, config.Config.GeminiCli.Token)
+	config := config.GetGeminiCliConfig()
+	geminiProvider := gemini.NewGeminiCliProvider(config.ProjectID, config.Token)
 	GeminiCliHandler = &Handler[*gemini.GeminiCliProvider]{}
 	GeminiCliHandler.P = geminiProvider
 }

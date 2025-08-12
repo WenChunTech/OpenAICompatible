@@ -8,7 +8,8 @@ import (
 var QwenHandler *Handler[*qwen.QwenProvider]
 
 func init() {
-	qwenProvider := qwen.NewQwenProvider(config.Config.Qwen.Token)
+	config := config.GetQwenConfig()
+	qwenProvider := qwen.NewQwenProvider(config.Token)
 	QwenHandler = &Handler[*qwen.QwenProvider]{}
 	QwenHandler.P = qwenProvider
 }
