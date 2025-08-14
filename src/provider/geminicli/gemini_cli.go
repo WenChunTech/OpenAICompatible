@@ -19,6 +19,7 @@ import (
 )
 
 var Provider *GeminiCliProvider
+var CacheMap map[string]*oauth2.Token
 
 type GeminiCliProvider struct {
 	*provider.BaseProvider
@@ -44,11 +45,30 @@ func NewGeminiCliProvider(projectID string, token *oauth2.Token) *GeminiCliProvi
 	}
 }
 
+func (p *GeminiCliProvider) getTW(ctx context.Context) (*TokenWrapper, error) {
+	token, ok := CacheMap[p.ProjectID]
+	if !ok {
+		token = p.Token
+	}
+	tw := NewTokenWrapper(ctx, token)
+	token, err := tw.GetToken()
+	if err != nil {
+		slog.Error("get token failed", "err", err)
+		return nil, err
+	}
+	CacheMap[p.ProjectID] = token
+	return tw, nil
+}
+
 func (p *GeminiCliProvider) HandleChatCompleteRequest(ctx context.Context, r *openai.OpenAIChatCompletionRequest) (*request.Response, error) {
-	tw := NewTokenWrapper(ctx, p.Token)
+	tw, err := p.getTW(ctx)
+	if err != nil {
+		slog.Error("get token wrapper failed", "err", err)
+		return nil, err
+	}
 	ctx = context.WithValue(ctx, constant.ProjectIDKey, p.ProjectID)
 	var geminiCliRequest = &geminicli.GeminiCliChatCompletionRequest{}
-	err := geminiCliRequest.ImportOpenAIChatCompletionRequest(ctx, r)
+	err = geminiCliRequest.ImportOpenAIChatCompletionRequest(ctx, r)
 	if err != nil {
 		slog.Error("import openai chat completion request failed", "err", err)
 		return nil, err
