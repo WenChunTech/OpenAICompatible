@@ -1,15 +1,27 @@
 package util
 
 import (
+	"crypto/md5"
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"log/slog"
+	"strings"
 )
 
-func GenerateUUID() (string, error) {
+const Nonce = "Qibednl6_AZRzQLle-gdA"
+
+func Sign(timestamp int64, payload string) string {
+	hash := md5.Sum([]byte(fmt.Sprintf("%d%s%s", timestamp, payload, Nonce)))
+	return strings.ToUpper(hex.EncodeToString(hash[:]))
+}
+
+func GenerateUUID() string {
 	uuid := make([]byte, 16)
 	n, err := rand.Read(uuid)
 	if n != len(uuid) || err != nil {
-		return "", err
+		slog.Error("Failed to generate UUID")
+		return ""
 	}
 	// variant bits; see section 4.1.1
 	uuid[8] = uuid[8]&^0xc0 | 0x80
@@ -20,5 +32,5 @@ func GenerateUUID() (string, error) {
 		uuid[4:6],
 		uuid[6:8],
 		uuid[8:10],
-		uuid[10:]), nil
+		uuid[10:])
 }

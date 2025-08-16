@@ -53,11 +53,7 @@ func (c *CodeGeexChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Cont
 	config := config.GetCodeGeexConfig()
 	talkID := config.TalkID
 	if talkID == "" {
-		id, err := util.GenerateUUID()
-		if err != nil {
-			slog.Error("Failed to generate UUID", "error", err)
-			return err
-		}
+		id := util.GenerateUUID()
 		talkID = id
 	}
 

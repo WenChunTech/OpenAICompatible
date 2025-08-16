@@ -79,3 +79,15 @@ const (
 	GeminiCliChatCompleteURL = "https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse"
 	GeminiCliModelListURL    = ""
 )
+
+const (
+	DangBeiPrefix           = "dangbei"
+	DangBeiHost             = "ai-api.dangbei.net"
+	DangBeiChatCompletePath = "/ai-search/chatApi/v2/chat"
+	DangBeiModelListPath    = "/ai-search/configApi/v1/getChatModelConfig"
+
+	DangBeiChatCreateURL   = "https://ai-api.dangbei.net/ai-search/conversationApi/v1/batch/create"
+	DangBeiGenerateIdURL   = "https://ai-api.dangbei.net/ai-search/commonApi/v1/generateId"
+	DangBeiChatCompleteURL = "https://ai-api.dangbei.net/ai-search/chatApi/v2/chat"
+	DangBeiModelListURL    = "https://ai-api.dangbei.net/ai-search/configApi/v1/getChatModelConfig"
+)

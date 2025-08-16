@@ -32,7 +32,7 @@ import (
 //	    "userAction": "deep,online",
 //	    "agentId": ""
 //	}
-type DangBeiChatRequest struct {
+type DangBeiChatCompleteRequest struct {
 	Stream         bool       `json:"stream"`
 	BotCode        string     `json:"botCode"`
 	ConversationID string     `json:"conversationId"`
@@ -57,7 +57,7 @@ type ChatOption struct {
 	SearchSharedKnowledge bool `json:"searchSharedKnowledge"`
 }
 
-func (c *DangBeiChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Context, req *openai.OpenAIChatCompletionRequest) error {
+func (c *DangBeiChatCompleteRequest) ImportOpenAIChatCompletionRequest(ctx context.Context, req *openai.OpenAIChatCompletionRequest) error {
 	var question strings.Builder
 	for _, message := range req.Messages {
 		switch message.Content.(type) {
@@ -84,7 +84,7 @@ func (c *DangBeiChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Conte
 		conversationID = ctx.Value(constant.ConversationID).(string)
 	}
 
-	*c = DangBeiChatRequest{
+	*c = DangBeiChatCompleteRequest{
 		Stream:         *req.Stream,
 		BotCode:        "AI_SEARCH",
 		ConversationID: conversationID,
@@ -102,4 +102,72 @@ func (c *DangBeiChatRequest) ImportOpenAIChatCompletionRequest(ctx context.Conte
 	}
 
 	return nil
+}
+
+type DangBeiChatCreateResponse struct {
+	Success    bool           `json:"success"`
+	ErrCode    any            `json:"errCode"`
+	ErrMessage any            `json:"errMessage"`
+	RequestID  string         `json:"requestId"`
+	Data       ChatCreateData `json:"data"`
+}
+
+type ChatModelConfig struct {
+	Model   string `json:"model"`
+	Options []any  `json:"options"`
+}
+
+type ActiveConversation struct {
+	ConversationID string `json:"conversationId"`
+	IsVisible      bool   `json:"isVisible"`
+	Order          int    `json:"order"`
+}
+
+type MultiModelLayout struct {
+	ActiveConversation []ActiveConversation `json:"activeConversation"`
+	LastUpdateTime     string               `json:"lastUpdateTime"`
+}
+
+type MetaData struct {
+	WriteCode        string           `json:"writeCode"`
+	ChatModelConfig  ChatModelConfig  `json:"chatModelConfig"`
+	MultiModelLayout MultiModelLayout `json:"multiModelLayout"`
+	SuperAgentPath   string           `json:"superAgentPath"`
+	PageType         any              `json:"pageType"`
+}
+
+type ConversationList struct {
+	ConversationID   string   `json:"conversationId"`
+	ConversationType int      `json:"conversationType"`
+	Title            string   `json:"title"`
+	UserID           any      `json:"userId"`
+	DeviceID         string   `json:"deviceId"`
+	TitleSummaryFlag int      `json:"titleSummaryFlag"`
+	MetaData         MetaData `json:"metaData"`
+	IsAnonymous      bool     `json:"isAnonymous"`
+	AnonymousKey     string   `json:"anonymousKey"`
+	LastChatModel    any      `json:"lastChatModel"`
+	ConversationList any      `json:"conversationList"`
+}
+
+type ChatCreateData struct {
+	ConversationID   string             `json:"conversationId"`
+	ConversationType int                `json:"conversationType"`
+	Title            string             `json:"title"`
+	UserID           any                `json:"userId"`
+	DeviceID         string             `json:"deviceId"`
+	TitleSummaryFlag int                `json:"titleSummaryFlag"`
+	MetaData         MetaData           `json:"metaData"`
+	IsAnonymous      bool               `json:"isAnonymous"`
+	AnonymousKey     string             `json:"anonymousKey"`
+	LastChatModel    any                `json:"lastChatModel"`
+	ConversationList []ConversationList `json:"conversationList"`
+}
+
+type DangBeiGenerateIdResponse struct {
+	Success    bool   `json:"success"`
+	ErrCode    any    `json:"errCode"`
+	ErrMessage any    `json:"errMessage"`
+	RequestID  string `json:"requestId"`
+	Data       string `json:"data"`
 }

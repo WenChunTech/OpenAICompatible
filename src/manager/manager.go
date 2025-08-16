@@ -14,6 +14,7 @@ import (
 	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 	"github.com/WenChunTech/OpenAICompatible/src/provider"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/codegeex"
+	"github.com/WenChunTech/OpenAICompatible/src/provider/dangbei"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/geminicli"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/qwen"
 )
@@ -40,6 +41,10 @@ func newGeminiCliProvider() provider.Provider {
 	return geminicli.NewGeminiCliProvider(config.ProjectID, config.Token)
 }
 
+func newDangBeiProvider() provider.Provider {
+	return dangbei.NewDangBeiProvider()
+}
+
 func InitProviderManager() *ProviderManager {
 	context := context.Background()
 	manager := NewProviderManager()
@@ -54,6 +59,10 @@ func InitProviderManager() *ProviderManager {
 	err = manager.RegisterProvider(context, constant.GeminiCliPrefix, newGeminiCliProvider)
 	if err != nil {
 		slog.Error("Failed to register gemini_cli provider", "error", err)
+	}
+	err = manager.RegisterProvider(context, constant.DangBeiPrefix, newDangBeiProvider)
+	if err != nil {
+		slog.Error("Failed to register dangbei provider", "error", err)
 	}
 	return manager
 }
