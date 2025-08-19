@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	geminicli "github.com/WenChunTech/OpenAICompatible/src/model/gemini_cli"
 	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
@@ -18,18 +17,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var Provider *GeminiCliProvider
 var CacheMap map[string]*oauth2.Token
 
 type GeminiCliProvider struct {
 	*provider.BaseProvider
 	ProjectID string
 	Token     *oauth2.Token
-}
-
-func init() {
-	config := config.GetGeminiCliConfig()
-	Provider = NewGeminiCliProvider(config.ProjectID, config.Token)
 }
 
 func NewGeminiCliProvider(projectID string, token *oauth2.Token) *GeminiCliProvider {

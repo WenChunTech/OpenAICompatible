@@ -46,20 +46,37 @@ func newDangBeiProvider() provider.Provider {
 }
 
 func InitProviderManager() *ProviderManager {
+	var err error
 	context := context.Background()
 	manager := NewProviderManager()
-	err := manager.RegisterProvider(context, constant.CodeGeexPrefix, newCodeGeexProvider)
-	if err != nil {
-		slog.Error("Failed to register codegeex provider", "error", err)
+
+	if config.GetCodeGeexConfig() != nil {
+		err = manager.RegisterProvider(context, constant.CodeGeexPrefix, newCodeGeexProvider)
+		if err != nil {
+			slog.Error("Failed to register codegeex provider", "error", err)
+		}
+	} else {
+		slog.Warn("CodeGeex config is nil, skipping CodeGeex provider registration")
 	}
-	err = manager.RegisterProvider(context, constant.QwenPrefix, newQwenProvider)
-	if err != nil {
-		slog.Error("Failed to register qwen provider", "error", err)
+
+	if config.GetQwenConfig() != nil {
+		err = manager.RegisterProvider(context, constant.QwenPrefix, newQwenProvider)
+		if err != nil {
+			slog.Error("Failed to register qwen provider", "error", err)
+		}
+	} else {
+		slog.Warn("Qwen config is nil, skipping Qwen provider registration")
 	}
-	err = manager.RegisterProvider(context, constant.GeminiCliPrefix, newGeminiCliProvider)
-	if err != nil {
-		slog.Error("Failed to register gemini_cli provider", "error", err)
+
+	if config.GetGeminiCliConfig() != nil {
+		err = manager.RegisterProvider(context, constant.GeminiCliPrefix, newGeminiCliProvider)
+		if err != nil {
+			slog.Error("Failed to register gemini_cli provider", "error", err)
+		}
+	} else {
+		slog.Warn("GeminiCli config is nil, skipping GeminiCli provider registration")
 	}
+
 	err = manager.RegisterProvider(context, constant.DangBeiPrefix, newDangBeiProvider)
 	if err != nil {
 		slog.Error("Failed to register dangbei provider", "error", err)

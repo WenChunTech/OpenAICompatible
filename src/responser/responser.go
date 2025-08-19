@@ -3,7 +3,9 @@ package responser
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -20,6 +22,17 @@ type EventStreamHandler[C converter.ChatCompletionConverter] struct {
 
 func (h *EventStreamHandler[C]) Handle(ctx context.Context, w http.ResponseWriter, r *request.Response) error {
 	defer r.Body.Close()
+	if r.StatusCode != http.StatusOK {
+		slog.Error("Failed to get response", "status_code", r.StatusCode)
+		msg, err := io.ReadAll(r.Body)
+		if err != nil {
+			slog.Error("Failed to read response body", "error", err)
+			return fmt.Errorf("failed to get response: %d", r.StatusCode)
+		}
+		slog.Error("Response body", "body", string(msg))
+		return errors.New(string(msg))
+	}
+
 	sseParser := parser.NewParser()
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -44,11 +57,6 @@ func (h *EventStreamHandler[C]) Handle(ctx context.Context, w http.ResponseWrite
 				return nil
 			}
 
-			if json.Valid(buf) {
-				slog.Error("sse data parse failed", "err_msg", string(buf))
-				return fmt.Errorf("sse data parse failed: %s", string(buf))
-			}
-
 			events := parser.Parse[C](sseParser, buf)
 			for _, event := range events {
 				data, err := (*event.Data).Convert(ctx)
@@ -60,7 +68,7 @@ func (h *EventStreamHandler[C]) Handle(ctx context.Context, w http.ResponseWrite
 				buf, err := json.Marshal(data)
 				if err != nil {
 					slog.Error("marshal json data error", slog.Any("data", data))
-					return fmt.Errorf("marshal json data error: %w", err)
+					continue
 				}
 				builder.WriteString("data: ")
 				builder.Write(buf)

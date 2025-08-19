@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
 	"github.com/WenChunTech/OpenAICompatible/src/model/qwen"
@@ -18,19 +17,12 @@ import (
 	"github.com/WenChunTech/OpenAICompatible/src/responser"
 )
 
-var Provider *QwenProvider
-
 type QwenProvider struct {
 	*provider.BaseProvider
 
 	// ChatID string
 	// Model  string
 	// Token  string
-}
-
-func init() {
-	config := config.GetQwenConfig()
-	Provider = NewQwenProvider(config.Token)
 }
 
 func NewQwenProvider(token string) *QwenProvider {

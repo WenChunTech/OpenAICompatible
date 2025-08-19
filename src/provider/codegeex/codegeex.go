@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/model/codegeex"
 	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
@@ -17,15 +16,8 @@ import (
 	"github.com/WenChunTech/OpenAICompatible/src/responser"
 )
 
-var Provider *CodeGeexProvider
-
 type CodeGeexProvider struct {
 	*provider.BaseProvider
-}
-
-func init() {
-	config := config.GetCodeGeexConfig()
-	Provider = NewCodeGeexProvider(config.Token)
 }
 
 func NewCodeGeexProvider(token string) *CodeGeexProvider {

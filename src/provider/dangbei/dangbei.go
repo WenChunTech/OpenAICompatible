@@ -20,10 +20,8 @@ import (
 	"github.com/WenChunTech/OpenAICompatible/src/util"
 )
 
-var Provider *DangBeiProvider
-
 const createRequest = `{"conversationList":[{"metaData":{"chatModelConfig":{},"superAgentPath":"/chat"},"shareId":"","isAnonymous":false,"source":""}]}`
-const SignURL = "https://ai-dangbei.deno.dev/"
+const SignURL = "https://ai-dangbei.deno.dev"
 
 type DangBeiProvider struct {
 	*provider.BaseProvider
@@ -37,10 +35,6 @@ type Sign struct {
 	Nonce     string `json:"nonce"`
 	Sign      string `json:"sign"`
 	Timestamp int64  `json:"timestamp"`
-}
-
-func init() {
-	Provider = NewDangBeiProvider()
 }
 
 func NewDangBeiProvider() *DangBeiProvider {
@@ -114,7 +108,6 @@ func (p *DangBeiProvider) HandleChatCompleteRequest(ctx context.Context, r *open
 		return nil, err
 	}
 
-	slog.Info(string(reqBody))
 	resp, err = request.NewRequestBuilder(SignURL, http.MethodPost).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
 	if err != nil {
 		slog.Error("Failed to sign request", "error", err)
@@ -127,7 +120,6 @@ func (p *DangBeiProvider) HandleChatCompleteRequest(ctx context.Context, r *open
 		return nil, err
 	}
 
-	slog.Info("Sign response", "data", signResp.Data)
 	headers = map[string]string{
 		"content-type": "application/json",
 		"deviceId":     deviceID,
@@ -135,7 +127,6 @@ func (p *DangBeiProvider) HandleChatCompleteRequest(ctx context.Context, r *open
 		"sign":         signResp.Data.Sign,
 		"timestamp":    strconv.FormatInt(signResp.Data.Timestamp, 10),
 	}
-
 	return request.NewRequestBuilder(p.ChatCompleteURL, p.ChatCompleteMethod).WithHeaders(headers).WithJson(bytes.NewReader(reqBody)).Do(ctx, nil)
 }
 
