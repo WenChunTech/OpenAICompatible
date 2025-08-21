@@ -17,7 +17,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var CacheMap map[string]*oauth2.Token
+var CacheMap = make(map[string]*oauth2.Token)
 
 type GeminiCliProvider struct {
 	*provider.BaseProvider
