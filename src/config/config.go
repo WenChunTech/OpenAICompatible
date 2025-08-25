@@ -24,6 +24,7 @@ var RollMap = map[string]int{
 type AppConfig struct {
 	Host      string             `json:"host,omitempty"`
 	Port      int                `json:"port"`
+	Proxy     string             `json:"proxy,omitempty"`
 	CodeGeex  []*CodeGeexConfig  `json:"codegeex,omitempty"`
 	Qwen      []*QwenConfig      `json:"qwen,omitempty"`
 	GeminiCli []*GeminiCliConfig `json:"gemini_cli,omitempty"`

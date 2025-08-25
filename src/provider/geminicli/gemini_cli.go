@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	geminicli "github.com/WenChunTech/OpenAICompatible/src/model/gemini_cli"
 	"github.com/WenChunTech/OpenAICompatible/src/model/openai"
@@ -43,7 +44,7 @@ func (p *GeminiCliProvider) getTW(ctx context.Context) (*TokenWrapper, error) {
 	if !ok {
 		token = p.Token
 	}
-	tw := NewTokenWrapper(ctx, token)
+	tw := NewTokenWrapper(ctx, token, config.Config.Proxy)
 	token, err := tw.GetToken()
 	if err != nil {
 		slog.Error("get token failed", "err", err)

@@ -3,6 +3,7 @@ package geminicli
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -39,10 +40,23 @@ type TokenWrapper struct {
 }
 
 // NewTokenWrapper 创建TokenWrapper
-func NewTokenWrapper(ctx context.Context, token *oauth2.Token) *TokenWrapper {
-	config := newConfig()
+func NewTokenWrapper(ctx context.Context, token *oauth2.Token, proxy string) *TokenWrapper {
+	if proxy != "" {
+		proxyUrl, err := url.Parse(proxy)
+		if err == nil {
+			transport := &http.Transport{
+				Proxy: http.ProxyURL(proxyUrl),
+			}
+			client := &http.Client{
+				Transport: transport,
+			}
+			ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
+		}
+	}
+
+	oauthConfig := newConfig()
 	// 使用ReuseTokenSource来缓存token，避免频繁刷新
-	source := oauth2.ReuseTokenSource(token, config.TokenSource(ctx, token))
+	source := oauth2.ReuseTokenSource(token, oauthConfig.TokenSource(ctx, token))
 	client := oauth2.NewClient(ctx, source)
 	return &TokenWrapper{
 		source: source,
