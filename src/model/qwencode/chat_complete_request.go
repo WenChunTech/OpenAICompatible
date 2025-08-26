@@ -1,4 +1,4 @@
-package qwen_code
+package qwencode
 
 import (
 	"context"

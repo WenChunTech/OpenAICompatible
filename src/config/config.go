@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"golang.org/x/oauth2"
@@ -22,11 +23,12 @@ var RollMap = map[string]int{
 }
 
 type AppConfig struct {
-	Host      string             `json:"host,omitempty"`
+	Host      string             `json:"host"`
 	Port      int                `json:"port"`
 	Proxy     string             `json:"proxy,omitempty"`
 	CodeGeex  []*CodeGeexConfig  `json:"codegeex,omitempty"`
 	Qwen      []*QwenConfig      `json:"qwen,omitempty"`
+	QwenCode  []*QwenCodeConfig  `json:"qwen_code,omitempty"`
 	GeminiCli []*GeminiCliConfig `json:"gemini_cli,omitempty"`
 }
 
@@ -52,6 +54,20 @@ type CodeGeexConfig struct {
 type QwenConfig struct {
 	Prefix string `json:"prefix,omitempty"`
 	Token  string `json:"token"`
+}
+
+type QwenCodeConfig struct {
+	Prefix string         `json:"prefix"`
+	Token  *QwenCodeToken `json:"token"`
+}
+
+type QwenCodeToken struct {
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token"`
+	TokenType    string    `json:"token_type"`
+	ExpiresIn    int       `json:"expires_in"`
+	ResourceURL  string    `json:"resource_url"`
+	Expiry       time.Time `json:"expiry"`
 }
 
 var Config = &AppConfig{}
@@ -142,5 +158,23 @@ func NextGeminiCliConfig() *GeminiCliConfig {
 	}
 
 	RollMap[constant.GeminiCliPrefix] = (RollMap[constant.GeminiCliPrefix] + 1) % len(Config.GeminiCli)
+	return config
+}
+
+func GetQwenCodeConfig() *QwenCodeConfig {
+	if len(Config.QwenCode) == 0 {
+		return nil
+	}
+
+	return Config.QwenCode[RollMap[constant.QwenPrefix]]
+}
+
+func NextQwenCodeConfig() *QwenCodeConfig {
+	config := GetQwenCodeConfig()
+	if config == nil {
+		return nil
+	}
+
+	RollMap[constant.QwenPrefix] = (RollMap[constant.QwenPrefix] + 1) % len(Config.QwenCode)
 	return config
 }

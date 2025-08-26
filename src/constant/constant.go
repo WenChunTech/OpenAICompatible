@@ -71,6 +71,10 @@ const (
 )
 
 const (
+	QwenCodePrefix = "qwen_code"
+)
+
+const (
 	GeminiCliPrefix           = "gemini_cli"
 	GeminiCliHost             = "cloudcode-pa.googleapis.com"
 	GeminiCliChatCompletePath = "/v1internal:streamGenerateContent"

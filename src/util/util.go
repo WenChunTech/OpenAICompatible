@@ -4,9 +4,13 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
+
+	"github.com/WenChunTech/OpenAICompatible/src/config"
 )
 
 const Nonce = "Qibednl6_AZRzQLle-gdA"
@@ -33,4 +37,15 @@ func GenerateUUID() string {
 		uuid[6:8],
 		uuid[8:10],
 		uuid[10:])
+}
+
+func SaveConfig(config *config.AppConfig, path string) {
+	data, err := json.Marshal(config)
+	if err != nil {
+		slog.Error("Failed to marshal config", "error", err)
+	}
+
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		slog.Error("Failed to save config", "error", err)
+	}
 }

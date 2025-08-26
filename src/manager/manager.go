@@ -17,6 +17,7 @@ import (
 	"github.com/WenChunTech/OpenAICompatible/src/provider/dangbei"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/geminicli"
 	"github.com/WenChunTech/OpenAICompatible/src/provider/qwen"
+	qwencode "github.com/WenChunTech/OpenAICompatible/src/provider/qwen_code"
 )
 
 const Object = "model"
@@ -34,6 +35,11 @@ func newCodeGeexProvider() provider.Provider {
 func newQwenProvider() provider.Provider {
 	config := config.NextQwenConfig()
 	return qwen.NewQwenProvider(config.Token)
+}
+
+func newQwenCodeProvider() provider.Provider {
+	config := config.NextQwenCodeConfig()
+	return qwencode.NewQwenCodeProvider(config.Token)
 }
 
 func newGeminiCliProvider() provider.Provider {
@@ -62,10 +68,19 @@ func InitProviderManager() *ProviderManager {
 	if config.GetQwenConfig() != nil {
 		err = manager.RegisterProvider(context, constant.QwenPrefix, newQwenProvider)
 		if err != nil {
-			slog.Error("Failed to register qwen provider", "error", err)
+			slog.Error("Failed to register qwen code provider", "error", err)
 		}
 	} else {
 		slog.Warn("Qwen config is nil, skipping Qwen provider registration")
+	}
+
+	if config.GetQwenCodeConfig() != nil {
+		err = manager.RegisterProvider(context, constant.QwenCodePrefix, newQwenCodeProvider)
+		if err != nil {
+			slog.Error("Failed to register qwen_code provider", "error", err)
+		}
+	} else {
+		slog.Warn("QwenCode config is nil, skipping QwenCode provider registration")
 	}
 
 	if config.GetGeminiCliConfig() != nil {
