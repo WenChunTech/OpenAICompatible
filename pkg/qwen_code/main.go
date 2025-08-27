@@ -64,7 +64,7 @@ type DeviceTokenResponse struct {
 // QwenCredentials extends DeviceTokenResponse with an exact expiry time.
 type QwenCredentials struct {
 	DeviceTokenResponse
-	Expiry time.Time `json:"expiry_date"`
+	Expiry time.Time `json:"expiry"`
 }
 
 // generateCodeVerifier creates a random string for PKCE.
