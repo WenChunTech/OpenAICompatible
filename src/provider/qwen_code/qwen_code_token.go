@@ -68,7 +68,8 @@ func refreshAccessToken(ctx context.Context, token *config.QwenCodeToken) (*conf
 	if newToken.ResourceURL == "" {
 		newToken.ResourceURL = token.ResourceURL
 	}
-	token = &newToken
+	*token = newToken
+	config.UpdateConfigFile()
 	return token, nil
 }
 

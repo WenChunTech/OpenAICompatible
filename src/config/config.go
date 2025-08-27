@@ -107,6 +107,17 @@ func init() {
 	}
 }
 
+func UpdateConfigFile() {
+	data, err := json.Marshal(Config)
+	if err != nil {
+		slog.Error("Failed to marshal config", "error", err)
+	}
+
+	if err := os.WriteFile(APPLocalConfigFile, data, 0644); err != nil {
+		slog.Error("Failed to save config", "error", err)
+	}
+}
+
 func GetCodeGeexConfig() *CodeGeexConfig {
 	if len(Config.CodeGeex) == 0 {
 		return nil
