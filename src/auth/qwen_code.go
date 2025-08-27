@@ -1,4 +1,4 @@
-package main
+package auth
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/WenChunTech/OpenAICompatible/src/config"
 	"github.com/WenChunTech/OpenAICompatible/src/request"
 )
 
@@ -52,21 +53,6 @@ type DeviceAuthorizationResponse struct {
 	ExpiresIn               int    `json:"expires_in"`
 }
 
-// DeviceTokenResponse corresponds to the device token success data.
-type DeviceTokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
-	ResourceURL  string `json:"resource_url"`
-}
-
-// QwenCredentials extends DeviceTokenResponse with an exact expiry time.
-type QwenCredentials struct {
-	DeviceTokenResponse
-	Expiry time.Time `json:"expiry_date"`
-}
-
 // generateCodeVerifier creates a random string for PKCE.
 func generateCodeVerifier() string {
 	bytes := make([]byte, 32)
@@ -77,33 +63,9 @@ func generateCodeVerifier() string {
 	return base64.RawURLEncoding.EncodeToString(bytes)
 }
 
-// isTokenValid checks if the credentials are still valid, considering a small buffer.
-func isTokenValid(creds *QwenCredentials) bool {
-	if creds == nil {
-		return false
-	}
-	// Check if the token is expiring within the next 30 seconds.
-	return time.Now().Before(creds.Expiry.Add(-30 * time.Second))
-}
-
-// loadCredentials reads and parses credentials from the QwenOAuthFile.
-func loadCredentials() (*QwenCredentials, error) {
-	data, err := os.ReadFile(QwenOAuthFile)
-	if err != nil {
-		return nil, err // The caller can check for os.IsNotExist(err)
-	}
-
-	var creds QwenCredentials
-	if err := json.Unmarshal(data, &creds); err != nil {
-		return nil, fmt.Errorf("failed to decode credentials from %s: %w", QwenOAuthFile, err)
-	}
-	slog.Info("Successfully loaded credentials from", "file", QwenOAuthFile)
-	return &creds, nil
-}
-
 // saveCredentials serializes and writes credentials to the QwenOAuthFile.
-func saveCredentials(creds *QwenCredentials) error {
-	data, err := json.MarshalIndent(creds, "", "  ")
+func saveQwenCodeToken(token *config.QwenCodeToken) error {
+	data, err := json.Marshal(token)
 	if err != nil {
 		return fmt.Errorf("failed to encode credentials: %w", err)
 	}
@@ -173,7 +135,7 @@ func requestDeviceAuthorization(ctx context.Context) (*DeviceAuthorizationRespon
 }
 
 // pollDeviceToken polls the token endpoint to get the access token.
-func pollDeviceToken(ctx context.Context, deviceCode, verifier string, interval, timeout time.Duration) (*DeviceTokenResponse, error) {
+func pollDeviceToken(ctx context.Context, deviceCode, verifier string, interval, timeout time.Duration) (*config.QwenCodeToken, error) {
 	pollingCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -209,7 +171,7 @@ func pollDeviceToken(ctx context.Context, deviceCode, verifier string, interval,
 	}
 }
 
-func attemptToGetToken(ctx context.Context, deviceCode, verifier string) (*DeviceTokenResponse, error) {
+func attemptToGetToken(ctx context.Context, deviceCode, verifier string) (*config.QwenCodeToken, error) {
 	formData := map[string][]string{
 		"grant_type":    {qwenOAuthGrantType},
 		"client_id":     {qwenOAuthClientID},
@@ -241,7 +203,7 @@ func attemptToGetToken(ctx context.Context, deviceCode, verifier string) (*Devic
 		return nil, fmt.Errorf("token poll failed with status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	var tokenResp DeviceTokenResponse
+	var tokenResp config.QwenCodeToken
 	if err := json.Unmarshal(body, &tokenResp); err != nil {
 		return nil, fmt.Errorf("failed to decode token response: %w", err)
 	}
@@ -249,142 +211,28 @@ func attemptToGetToken(ctx context.Context, deviceCode, verifier string) (*Devic
 	return &tokenResp, nil
 }
 
-// refreshAccessToken uses the refresh token to get a new access token.
-func refreshAccessToken(ctx context.Context, creds *QwenCredentials) (*QwenCredentials, error) {
-	if creds == nil || creds.RefreshToken == "" {
-		return nil, fmt.Errorf("no refresh token available")
-	}
-
-	slog.Info("Refreshing access token...")
-
-	formData := map[string][]string{
-		"grant_type":    {"refresh_token"},
-		"refresh_token": {creds.RefreshToken},
-		"client_id":     {qwenOAuthClientID},
-	}
-
-	resp, err := request.NewRequestBuilder(qwenOAuthTokenEndpoint, http.MethodPost).
-		WithForm(formData).
-		Do(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("token refresh request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		var errData ErrorData
-		if err := json.NewDecoder(resp.Body).Decode(&errData); err == nil {
-			return nil, &errData
-		}
-		return nil, fmt.Errorf("token refresh failed with status code: %d", resp.StatusCode)
-	}
-
-	var tokenData DeviceTokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokenData); err != nil {
-		return nil, fmt.Errorf("failed to decode token refresh response: %w", err)
-	}
-
-	// Create new credentials, preserving the refresh token if a new one isn't provided.
-	newCreds := &QwenCredentials{
-		DeviceTokenResponse: DeviceTokenResponse{
-			AccessToken:  tokenData.AccessToken,
-			RefreshToken: tokenData.RefreshToken,
-			TokenType:    tokenData.TokenType,
-			ExpiresIn:    tokenData.ExpiresIn,
-			ResourceURL:  tokenData.ResourceURL,
-		},
-		Expiry: time.Now().Add(time.Duration(tokenData.ExpiresIn) * time.Second),
-	}
-
-	// If the new response doesn't include a refresh token, reuse the old one.
-	if newCreds.RefreshToken == "" {
-		newCreds.RefreshToken = creds.RefreshToken
-	}
-	if newCreds.ResourceURL == "" {
-		newCreds.ResourceURL = creds.ResourceURL
-	}
-
-	slog.Info("Successfully refreshed access token.")
-	return newCreds, nil
-}
-
 // GetToken orchestrates the entire device authorization flow.
-func GetToken(ctx context.Context) (*DeviceTokenResponse, error) {
+func GetToken(ctx context.Context) (*config.QwenCodeToken, error) {
 	authResp, verifier, err := requestDeviceAuthorization(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to request device authorization: %w", err)
 	}
 
 	fmt.Printf("Please go to %s and enter the code: %s\n", authResp.VerificationURI, authResp.UserCode)
-
-	// Poll for 5 seconds interval, with a 5 minute timeout.
-	tokenResp, err := pollDeviceToken(ctx, authResp.DeviceCode, verifier, 5*time.Second, 5*time.Minute)
+	// Poll for 5 seconds interval, with a 1 minute timeout.
+	tokenResp, err := pollDeviceToken(ctx, authResp.DeviceCode, verifier, 5*time.Second, 1*time.Minute)
 	if err != nil {
 		return nil, fmt.Errorf("failed to poll for device token: %w", err)
 	}
-
+	slog.Info("Device token received", "token", tokenResp.AccessToken)
 	return tokenResp, nil
 }
 
-func main() {
+func StartQwenCodeAuth() {
 	ctx := context.Background()
-	var creds *QwenCredentials
-	var err error
-
-	// 1. Try to load existing credentials
-	creds, err = loadCredentials()
+	token, err := GetToken(ctx)
 	if err != nil {
-		if os.IsNotExist(err) {
-			slog.Info("No existing credentials found. Starting new device authorization flow.")
-			// 4. File doesn't exist, get a new token
-			tokenResp, getTokenErr := GetToken(ctx)
-			if getTokenErr != nil {
-				slog.Error("Failed to get new token", "error", getTokenErr)
-				return
-			}
-			// 5. Convert to QwenCredentials
-			creds = &QwenCredentials{
-				DeviceTokenResponse: *tokenResp,
-				Expiry:              time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
-			}
-		} else {
-			// Other error loading credentials
-			slog.Error("Failed to load credentials", "error", err)
-			return
-		}
-	} else {
-		// 2. Credentials loaded, check if token is valid
-		if !isTokenValid(creds) {
-			slog.Info("Access token is expired or invalid. Refreshing...")
-			// 3. Token is invalid, refresh it
-			refreshedCreds, refreshErr := refreshAccessToken(ctx, creds)
-			if refreshErr != nil {
-				slog.Error("Failed to refresh access token", "error", refreshErr)
-				// If refresh fails, might need to re-authenticate
-				slog.Info("Attempting to re-authenticate with device flow.")
-				tokenResp, getTokenErr := GetToken(ctx)
-				if getTokenErr != nil {
-					slog.Error("Failed to get new token after refresh failure", "error", getTokenErr)
-					return
-				}
-				creds = &QwenCredentials{
-					DeviceTokenResponse: *tokenResp,
-					Expiry:              time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
-				}
-			} else {
-				creds = refreshedCreds
-			}
-		} else {
-			slog.Info("Existing access token is valid.")
-		}
+		slog.Error("Failed to start Qwen code auth", "error", err)
 	}
-
-	// 6. Save the latest valid credentials
-	if creds != nil {
-		if err := saveCredentials(creds); err != nil {
-			slog.Error("Failed to save credentials", "error", err)
-			return
-		}
-		slog.Info("Successfully obtained and saved token.", "access_token", creds.AccessToken)
-	}
+	saveQwenCodeToken(token)
 }
