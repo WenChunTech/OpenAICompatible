@@ -47,7 +47,7 @@ func refreshAccessToken(ctx context.Context, token *config.QwenCodeToken) (*conf
 
 	if resp.StatusCode != http.StatusOK {
 		errMsg, err := io.ReadAll(resp.Body)
-		if err == nil {
+		if err != nil {
 			slog.Error("Failed to read response body for token refresh failed", "error", err)
 			return nil, fmt.Errorf("token refresh failed with status code: %d, error message: %s", resp.StatusCode, err)
 		}
