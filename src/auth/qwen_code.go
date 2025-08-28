@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/WenChunTech/OpenAICompatible/src/config"
+	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"github.com/WenChunTech/OpenAICompatible/src/request"
 )
 
@@ -100,8 +102,7 @@ func requestDeviceAuthorization(ctx context.Context) (*DeviceAuthorizationRespon
 	if _, err := rand.Read(reqIDBytes); err != nil {
 		return nil, "", fmt.Errorf("failed to generate request ID: %w", err)
 	}
-	reqID := fmt.Sprintf("%x", reqIDBytes)
-
+	reqID := hex.EncodeToString(reqIDBytes)
 	headers := map[string]string{
 		"x-request-id": reqID,
 		"Accept":       "application/json",
@@ -136,19 +137,15 @@ func requestDeviceAuthorization(ctx context.Context) (*DeviceAuthorizationRespon
 
 // pollDeviceToken polls the token endpoint to get the access token.
 func pollDeviceToken(ctx context.Context, deviceCode, verifier string, interval, timeout time.Duration) (*config.QwenCodeToken, error) {
-	pollingCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
-
 	for {
 		select {
-		case <-pollingCtx.Done():
+		case <-time.After(timeout):
 			return nil, fmt.Errorf("polling timed out after %v", timeout)
 		case <-ticker.C:
 			slog.Info("Polling for device token...")
-			tokenResp, err := attemptToGetToken(pollingCtx, deviceCode, verifier)
+			tokenResp, err := attemptToGetToken(ctx, deviceCode, verifier)
 			if err != nil {
 				// Check for specific polling errors
 				if errData, ok := err.(*ErrorData); ok {
@@ -217,9 +214,6 @@ func GetToken(ctx context.Context) (*config.QwenCodeToken, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to request device authorization: %w", err)
 	}
-
-	fmt.Printf("Please go to %s and enter the code: %s\n", authResp.VerificationURI, authResp.UserCode)
-	// Poll for 5 seconds interval, with a 1 minute timeout.
 	tokenResp, err := pollDeviceToken(ctx, authResp.DeviceCode, verifier, 5*time.Second, 1*time.Minute)
 	if err != nil {
 		return nil, fmt.Errorf("failed to poll for device token: %w", err)
@@ -234,5 +228,17 @@ func StartQwenCodeAuth() {
 	if err != nil {
 		slog.Error("Failed to start Qwen code auth", "error", err)
 	}
-	saveQwenCodeToken(token)
+	if err := saveQwenCodeToken(token); err != nil {
+		slog.Error("Failed to save token", "error", err)
+		return
+	}
+
+	qwenCodeConfig := config.GetQwenCodeConfig()
+	if qwenCodeConfig == nil {
+		config.Config.QwenCode = make([]*config.QwenCodeConfig, 0, 1)
+	}
+	config.Config.QwenCode = append(config.Config.QwenCode, &config.QwenCodeConfig{
+		Prefix: constant.QwenCodePrefix,
+		Token:  token,
+	})
 }

@@ -12,6 +12,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/WenChunTech/OpenAICompatible/src/config"
+	"github.com/WenChunTech/OpenAICompatible/src/constant"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -128,11 +130,11 @@ func newConfig() *oauth2.Config {
 	}
 }
 
-func StartGeminiCli() {
+func StartGeminiCliAuth() {
 	slog.Info("Starting Auth Gemini CLI Token...")
 	ctx := context.Background()
-	config := newConfig()
-	token, err := newTokenFromWeb(ctx, config)
+	oauthConfig := newConfig()
+	token, err := newTokenFromWeb(ctx, oauthConfig)
 	if err != nil {
 		slog.Error("Failed to get token", "error", err)
 		return
@@ -141,5 +143,13 @@ func StartGeminiCli() {
 		slog.Error("Failed to save token", "error", err)
 		return
 	}
-	slog.Info("Token saved successfully")
+
+	geminiCLiConfig := config.GetGeminiCliConfig()
+	if geminiCLiConfig == nil {
+		config.Config.GeminiCli = make([]*config.GeminiCliConfig, 0, 1)
+	}
+	config.Config.GeminiCli = append(config.Config.GeminiCli, &config.GeminiCliConfig{
+		Prefix: constant.GeminiCliPrefix,
+		Token:  token,
+	})
 }
