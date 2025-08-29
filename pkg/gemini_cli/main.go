@@ -38,10 +38,22 @@ func openBrowser(url string) error {
 	case "darwin":
 		cmd = exec.Command("open", url)
 	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", url)
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	case "linux":
+		browsers := []string{"xdg-open", "x-www-browser", "www-browser", "firefox", "chromium", "google-chrome"}
+		for _, browser := range browsers {
+			if _, err := exec.LookPath(browser); err == nil {
+				cmd = exec.Command(browser, url)
+				break
+			}
+		}
+		if cmd == nil {
+			return fmt.Errorf("no suitable browser found on Linux system")
+		}
 	default:
-		cmd = exec.Command("xdg-open", url)
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
+
 	return cmd.Start()
 }
 

@@ -40,10 +40,22 @@ func openBrowser(url string) error {
 	case "darwin":
 		cmd = exec.Command("open", url)
 	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", url)
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	case "linux":
+		browsers := []string{"xdg-open", "x-www-browser", "www-browser", "firefox", "chromium", "google-chrome"}
+		for _, browser := range browsers {
+			if _, err := exec.LookPath(browser); err == nil {
+				cmd = exec.Command(browser, url)
+				break
+			}
+		}
+		if cmd == nil {
+			return fmt.Errorf("no suitable browser found on Linux system")
+		}
 	default:
-		cmd = exec.Command("xdg-open", url)
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
+
 	return cmd.Start()
 }
 
@@ -51,11 +63,15 @@ func newTokenFromWeb(ctx context.Context, config *oauth2.Config) (*oauth2.Token,
 	codeChan := make(chan string)
 	errChan := make(chan error)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	server := &http.Server{Addr: ":8085", Handler: mux}
+	config.RedirectURL = "http://localhost:8085/oauth2callback"
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Received request", "path", r.URL.Path)
 	})
 
-	http.HandleFunc("/oauth2callback", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/oauth2callback", func(w http.ResponseWriter, r *http.Request) {
 		if err := r.URL.Query().Get("error"); err != "" {
 			slog.Error("Authentication failed", "error", err)
 			errChan <- fmt.Errorf("authentication failed via callback: %s", err)
@@ -72,7 +88,7 @@ func newTokenFromWeb(ctx context.Context, config *oauth2.Config) (*oauth2.Token,
 	})
 
 	go func() {
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", Port), nil); !errors.Is(err, http.ErrServerClosed) {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("Server failed to start", "error", err)
 			errChan <- fmt.Errorf("server failed to start: %w", err)
 		}
