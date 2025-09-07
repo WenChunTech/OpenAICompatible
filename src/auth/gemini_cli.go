@@ -165,7 +165,8 @@ func StartGeminiCliAuth() {
 		config.Config.GeminiCli = make([]*config.GeminiCliConfig, 0, 1)
 	}
 	config.Config.GeminiCli = append(config.Config.GeminiCli, &config.GeminiCliConfig{
-		Prefix: constant.GeminiCliPrefix,
-		Token:  token,
+		Prefix:    constant.GeminiCliPrefix,
+		ProjectID: "",
+		Token:     token,
 	})
 }

@@ -186,7 +186,7 @@ func (c *GeminiCliChatCompletionRequest) ImportOpenAIChatCompletionRequest(ctx c
 		declarations := []interface{}{}
 		for _, tool := range req.Tools {
 			if tool.Type == "function" {
-				declarations = append(declarations, tool.Function)
+				declarations = append(declarations, convertOpenAIFunctionToGemini(tool.Function))
 			}
 		}
 		if len(declarations) > 0 {
@@ -266,4 +266,56 @@ type GenerationConfigThinkingConfig struct {
 // that the model can call.
 type ToolDeclaration struct {
 	FunctionDeclarations []interface{} `json:"functionDeclarations"`
+}
+
+func convertOpenAIFunctionToGemini(openAIFunc openai.FunctionDefinition) map[string]interface{} {
+	geminiFunc := map[string]interface{}{
+		"name": openAIFunc.Name,
+	}
+	if openAIFunc.Description != nil {
+		geminiFunc["description"] = *openAIFunc.Description
+	}
+	if openAIFunc.Parameters != nil {
+		geminiFunc["parameters"] = convertSchema(openAIFunc.Parameters)
+	}
+	return geminiFunc
+}
+
+func convertSchema(schema interface{}) interface{} {
+	if schema == nil {
+		return nil
+	}
+
+	schemaMap, ok := schema.(map[string]interface{})
+	if !ok {
+		return schema // Not a map, return as is
+	}
+
+	geminiSchema := make(map[string]interface{})
+	for key, value := range schemaMap {
+		switch key {
+		case "type":
+			if typeStr, ok := value.(string); ok {
+				geminiSchema[key] = strings.ToUpper(typeStr)
+			}
+		case "description", "required":
+			geminiSchema[key] = value
+		case "properties":
+			if propertiesMap, ok := value.(map[string]interface{}); ok {
+				newProperties := make(map[string]interface{})
+				for propKey, propValue := range propertiesMap {
+					if strings.HasPrefix(propKey, "$") {
+						continue // Skip $ref for now
+					}
+					newProperties[propKey] = convertSchema(propValue)
+				}
+				geminiSchema[key] = newProperties
+			}
+		case "items":
+			geminiSchema[key] = convertSchema(value)
+		default:
+			// Ignore other fields like $schema, additionalProperties
+		}
+	}
+	return geminiSchema
 }
