@@ -151,11 +151,6 @@ func (c *GeminiCliChatCompletionRequest) ImportOpenAIChatCompletionRequest(ctx c
 	c.Project = projectID
 	c.Request.SystemInstruction = systemInstruction
 	c.Request.Contents = contents
-	c.Request.GenerationConfig = &GenerationConfig{
-		ThinkingConfig: &GenerationConfigThinkingConfig{
-			IncludeThoughts: true,
-		},
-	}
 
 	if req.ReasoningEffort != nil {
 		switch *req.ReasoningEffort {
@@ -164,14 +159,19 @@ func (c *GeminiCliChatCompletionRequest) ImportOpenAIChatCompletionRequest(ctx c
 			c.Request.GenerationConfig.ThinkingConfig.ThinkingBudget = 0
 		case "auto":
 			c.Request.GenerationConfig.ThinkingConfig.ThinkingBudget = -1
+			c.Request.GenerationConfig.ThinkingConfig.IncludeThoughts = true
 		case "low":
 			c.Request.GenerationConfig.ThinkingConfig.ThinkingBudget = 1024
+			c.Request.GenerationConfig.ThinkingConfig.IncludeThoughts = true
 		case "medium":
 			c.Request.GenerationConfig.ThinkingConfig.ThinkingBudget = 8192
+			c.Request.GenerationConfig.ThinkingConfig.IncludeThoughts = true
 		case "high":
 			c.Request.GenerationConfig.ThinkingConfig.ThinkingBudget = 24576
+			c.Request.GenerationConfig.ThinkingConfig.IncludeThoughts = true
 		default:
 			c.Request.GenerationConfig.ThinkingConfig.ThinkingBudget = -1
+			c.Request.GenerationConfig.ThinkingConfig.IncludeThoughts = true
 		}
 	}
 
